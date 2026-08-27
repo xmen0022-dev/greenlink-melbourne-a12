@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { ref } from 'vue'
 
 const pages = [
   { id: 'home', label: 'Home' },
@@ -57,80 +57,112 @@ const upcomingEvents = [
   },
 ]
 
-const loginForm = reactive({
+const loginForm = ref({
   email: '',
   password: '',
 })
 
-const loginTouched = reactive({
-  email: false,
-  password: false,
-})
-
-const interestForm = reactive({
+const interestForm = ref({
   name: '',
   email: '',
   suburb: '',
   interest: '',
 })
 
+const loginErrors = ref({
+  email: null,
+  password: null,
+})
+
+const interestErrors = ref({
+  name: null,
+  email: null,
+  suburb: null,
+  interest: null,
+})
+
 const isLoggedIn = ref(false)
 const activePage = ref('home')
-const loginSubmitted = ref(false)
-const interestSubmitted = ref(false)
 const interestSuccess = ref(false)
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-const loginErrors = computed(() => {
-  const errors = {}
+const validateLoginEmail = (blur) => {
+  const email = loginForm.value.email.trim()
 
-  if (!loginForm.email.trim()) {
-    errors.email = 'Email is required.'
-  } else if (!emailPattern.test(loginForm.email)) {
-    errors.email = 'Enter a valid email address.'
+  if (!email) {
+    if (blur) {
+      loginErrors.value.email = 'Email is required.'
+    }
+  } else if (!emailPattern.test(email)) {
+    if (blur) {
+      loginErrors.value.email = 'Enter a valid email address.'
+    }
+  } else {
+    loginErrors.value.email = null
   }
+}
 
-  if (!loginForm.password) {
-    errors.password = 'Password is required.'
-  } else if (loginForm.password.length < 6) {
-    errors.password = 'Password must be at least 6 characters.'
+const validateLoginPassword = (blur) => {
+  const password = loginForm.value.password
+
+  if (!password) {
+    if (blur) {
+      loginErrors.value.password = 'Password is required.'
+    }
+  } else if (password.length < 6) {
+    if (blur) {
+      loginErrors.value.password = 'Password must be at least 6 characters.'
+    }
+  } else {
+    loginErrors.value.password = null
   }
+}
 
-  return errors
-})
-
-const formErrors = computed(() => {
-  const errors = {}
-
-  if (!interestForm.name.trim()) {
-    errors.name = 'Name is required.'
+const validateInterestName = (blur) => {
+  if (interestForm.value.name.trim().length < 2) {
+    if (blur) {
+      interestErrors.value.name = 'Name must be at least 2 characters.'
+    }
+  } else {
+    interestErrors.value.name = null
   }
+}
 
-  if (!interestForm.email.trim()) {
-    errors.email = 'Email is required.'
-  } else if (!emailPattern.test(interestForm.email)) {
-    errors.email = 'Enter a valid email address.'
+const validateInterestEmail = (blur) => {
+  const email = interestForm.value.email.trim()
+
+  if (!email) {
+    if (blur) {
+      interestErrors.value.email = 'Email is required.'
+    }
+  } else if (!emailPattern.test(email)) {
+    if (blur) {
+      interestErrors.value.email = 'Enter a valid email address.'
+    }
+  } else {
+    interestErrors.value.email = null
   }
+}
 
-  if (!interestForm.suburb.trim()) {
-    errors.suburb = 'Suburb is required.'
-  } else if (interestForm.suburb.trim().length < 3) {
-    errors.suburb = 'Suburb must be at least 3 characters.'
+const validateSuburb = (blur) => {
+  if (interestForm.value.suburb.trim().length < 3) {
+    if (blur) {
+      interestErrors.value.suburb = 'Suburb must be at least 3 characters.'
+    }
+  } else {
+    interestErrors.value.suburb = null
   }
+}
 
-  if (!interestForm.interest) {
-    errors.interest = 'Choose an interest area.'
+const validateInterestArea = (blur) => {
+  if (!interestForm.value.interest) {
+    if (blur) {
+      interestErrors.value.interest = 'Choose an interest area.'
+    }
+  } else {
+    interestErrors.value.interest = null
   }
-
-  return errors
-})
-
-const hasLoginErrors = computed(() => Object.keys(loginErrors.value).length > 0)
-const hasInterestErrors = computed(() => Object.keys(formErrors.value).length > 0)
-
-function showLoginError(field) {
-  return (loginSubmitted.value || loginTouched[field]) && Boolean(loginErrors.value[field])
 }
 
 function goToPage(page) {
@@ -139,9 +171,10 @@ function goToPage(page) {
 }
 
 function submitLogin() {
-  loginSubmitted.value = true
+  validateLoginEmail(true)
+  validateLoginPassword(true)
 
-  if (hasLoginErrors.value) {
+  if (loginErrors.value.email || loginErrors.value.password) {
     return
   }
 
@@ -152,26 +185,40 @@ function submitLogin() {
 function logout() {
   isLoggedIn.value = false
   activePage.value = 'home'
-  loginForm.password = ''
-  loginSubmitted.value = false
-  loginTouched.email = false
-  loginTouched.password = false
+  loginForm.value.password = ''
+  loginErrors.value.email = null
+  loginErrors.value.password = null
 }
 
 function submitInterest() {
-  interestSubmitted.value = true
   interestSuccess.value = false
+  validateInterestName(true)
+  validateInterestEmail(true)
+  validateSuburb(true)
+  validateInterestArea(true)
 
-  if (hasInterestErrors.value) {
+  if (
+    interestErrors.value.name ||
+    interestErrors.value.email ||
+    interestErrors.value.suburb ||
+    interestErrors.value.interest
+  ) {
     return
   }
 
   interestSuccess.value = true
-  interestForm.name = ''
-  interestForm.email = ''
-  interestForm.suburb = ''
-  interestForm.interest = ''
-  interestSubmitted.value = false
+  interestForm.value = {
+    name: '',
+    email: '',
+    suburb: '',
+    interest: '',
+  }
+  interestErrors.value = {
+    name: null,
+    email: null,
+    suburb: null,
+    interest: null,
+  }
 }
 </script>
 
@@ -197,12 +244,13 @@ function submitInterest() {
               v-model="loginForm.email"
               type="email"
               autocomplete="email"
-              :aria-invalid="showLoginError('email')"
+              :aria-invalid="Boolean(loginErrors.email)"
               aria-describedby="login-email-error"
-              @blur="loginTouched.email = true"
+              @blur="() => validateLoginEmail(true)"
+              @input="() => validateLoginEmail(false)"
             />
             <p
-              v-if="showLoginError('email')"
+              v-if="loginErrors.email"
               id="login-email-error"
               class="field-error"
             >
@@ -217,12 +265,13 @@ function submitInterest() {
               v-model="loginForm.password"
               type="password"
               autocomplete="current-password"
-              :aria-invalid="showLoginError('password')"
+              :aria-invalid="Boolean(loginErrors.password)"
               aria-describedby="login-password-error"
-              @blur="loginTouched.password = true"
+              @blur="() => validateLoginPassword(true)"
+              @input="() => validateLoginPassword(false)"
             />
             <p
-              v-if="showLoginError('password')"
+              v-if="loginErrors.password"
               id="login-password-error"
               class="field-error"
             >
@@ -376,11 +425,13 @@ function submitInterest() {
                 v-model="interestForm.name"
                 type="text"
                 autocomplete="name"
-                :aria-invalid="interestSubmitted && Boolean(formErrors.name)"
+                :aria-invalid="Boolean(interestErrors.name)"
                 aria-describedby="name-error"
+                @blur="() => validateInterestName(true)"
+                @input="() => validateInterestName(false)"
               />
-              <p v-if="interestSubmitted && formErrors.name" id="name-error" class="field-error">
-                {{ formErrors.name }}
+              <p v-if="interestErrors.name" id="name-error" class="field-error">
+                {{ interestErrors.name }}
               </p>
             </div>
 
@@ -391,11 +442,13 @@ function submitInterest() {
                 v-model="interestForm.email"
                 type="email"
                 autocomplete="email"
-                :aria-invalid="interestSubmitted && Boolean(formErrors.email)"
+                :aria-invalid="Boolean(interestErrors.email)"
                 aria-describedby="email-error"
+                @blur="() => validateInterestEmail(true)"
+                @input="() => validateInterestEmail(false)"
               />
-              <p v-if="interestSubmitted && formErrors.email" id="email-error" class="field-error">
-                {{ formErrors.email }}
+              <p v-if="interestErrors.email" id="email-error" class="field-error">
+                {{ interestErrors.email }}
               </p>
             </div>
 
@@ -406,11 +459,13 @@ function submitInterest() {
                 v-model="interestForm.suburb"
                 type="text"
                 autocomplete="address-level2"
-                :aria-invalid="interestSubmitted && Boolean(formErrors.suburb)"
+                :aria-invalid="Boolean(interestErrors.suburb)"
                 aria-describedby="suburb-error"
+                @blur="() => validateSuburb(true)"
+                @input="() => validateSuburb(false)"
               />
-              <p v-if="interestSubmitted && formErrors.suburb" id="suburb-error" class="field-error">
-                {{ formErrors.suburb }}
+              <p v-if="interestErrors.suburb" id="suburb-error" class="field-error">
+                {{ interestErrors.suburb }}
               </p>
             </div>
 
@@ -419,8 +474,10 @@ function submitInterest() {
               <select
                 id="interest"
                 v-model="interestForm.interest"
-                :aria-invalid="interestSubmitted && Boolean(formErrors.interest)"
+                :aria-invalid="Boolean(interestErrors.interest)"
                 aria-describedby="interest-error"
+                @blur="() => validateInterestArea(true)"
+                @change="() => validateInterestArea(false)"
               >
                 <option value="">Select one</option>
                 <option value="gardening">Community gardening</option>
@@ -428,8 +485,8 @@ function submitInterest() {
                 <option value="food">Food rescue</option>
                 <option value="repair">Repair and reuse</option>
               </select>
-              <p v-if="interestSubmitted && formErrors.interest" id="interest-error" class="field-error">
-                {{ formErrors.interest }}
+              <p v-if="interestErrors.interest" id="interest-error" class="field-error">
+                {{ interestErrors.interest }}
               </p>
             </div>
 

@@ -62,6 +62,11 @@ const loginForm = reactive({
   password: '',
 })
 
+const loginTouched = reactive({
+  email: false,
+  password: false,
+})
+
 const interestForm = reactive({
   name: '',
   email: '',
@@ -124,6 +129,10 @@ const formErrors = computed(() => {
 const hasLoginErrors = computed(() => Object.keys(loginErrors.value).length > 0)
 const hasInterestErrors = computed(() => Object.keys(formErrors.value).length > 0)
 
+function showLoginError(field) {
+  return (loginSubmitted.value || loginTouched[field]) && Boolean(loginErrors.value[field])
+}
+
 function goToPage(page) {
   activePage.value = page
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -145,6 +154,8 @@ function logout() {
   activePage.value = 'home'
   loginForm.password = ''
   loginSubmitted.value = false
+  loginTouched.email = false
+  loginTouched.password = false
 }
 
 function submitInterest() {
@@ -186,11 +197,12 @@ function submitInterest() {
               v-model="loginForm.email"
               type="email"
               autocomplete="email"
-              :aria-invalid="loginSubmitted && Boolean(loginErrors.email)"
+              :aria-invalid="showLoginError('email')"
               aria-describedby="login-email-error"
+              @blur="loginTouched.email = true"
             />
             <p
-              v-if="loginSubmitted && loginErrors.email"
+              v-if="showLoginError('email')"
               id="login-email-error"
               class="field-error"
             >
@@ -205,11 +217,12 @@ function submitInterest() {
               v-model="loginForm.password"
               type="password"
               autocomplete="current-password"
-              :aria-invalid="loginSubmitted && Boolean(loginErrors.password)"
+              :aria-invalid="showLoginError('password')"
               aria-describedby="login-password-error"
+              @blur="loginTouched.password = true"
             />
             <p
-              v-if="loginSubmitted && loginErrors.password"
+              v-if="showLoginError('password')"
               id="login-password-error"
               class="field-error"
             >

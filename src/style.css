@@ -37,6 +37,11 @@ button {
   font: inherit;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 #app {
   min-height: 100vh;
 }
@@ -617,10 +622,171 @@ p {
   gap: 14px;
 }
 
-.contact-grid {
+.contact-grid,
+.account-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.filter-panel,
+.detail-card,
+.empty-state {
+  margin-bottom: 36px;
+  padding: 28px;
+  border: 1px solid rgba(24, 49, 40, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(40, 79, 55, 0.08);
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.control-row,
+.filter-actions,
+.card-actions,
+.event-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-row {
+  margin-top: 18px;
+}
+
+.control-row span {
+  color: #10261d;
+  font-weight: 850;
+}
+
+.control-row button,
+.event-actions button,
+.text-button {
+  min-height: 40px;
+  border: 1px solid rgba(24, 49, 40, 0.18);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #1f4a37;
+  background: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.control-row button.active,
+.event-actions button:hover,
+.text-button:hover {
+  color: #ffffff;
+  border-color: #1f7a4d;
+  background: #1f7a4d;
+}
+
+.filter-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+legend {
+  margin-bottom: 4px;
+  color: #10261d;
+  font-weight: 850;
+}
+
+fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #40574e;
+  font-weight: 700;
+}
+
+fieldset input {
+  width: 18px;
+  height: 18px;
+  accent-color: #1f7a4d;
+}
+
+.filter-actions {
+  grid-column: 1 / -1;
+}
+
+.placeholder-map {
+  position: relative;
+  height: 360px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(24, 49, 40, 0.12);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(31, 122, 77, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(31, 122, 77, 0.08) 1px, transparent 1px),
+    #eef5e8;
+  background-size: 48px 48px, 48px 48px, 100% 100%;
+}
+
+.placeholder-map::after {
+  content: "Map of Melbourne Green Spaces";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(64, 87, 78, 0.38);
+  font-size: 1.6rem;
+  font-weight: 850;
+}
+
+.map-point {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-8px, -8px);
+  padding: 4px 8px 4px 22px;
+  border-radius: 999px;
+  color: #10261d;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(40, 79, 55, 0.16);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.map-point::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1f7a4d;
+  transform: translateY(-50%);
+}
+
+.list-layout {
+  grid-template-columns: 1fr;
+}
+
+.detail-card {
+  display: grid;
+  max-width: 760px;
+  gap: 18px;
+}
+
+.detail-card .text-button {
+  justify-self: start;
 }
 
 .event-item {
@@ -632,6 +798,10 @@ p {
 
 .event-item h3 {
   margin: 6px 0 2px;
+}
+
+.event-item p + p {
+  margin-top: 8px;
 }
 
 .event-tag {
@@ -708,7 +878,13 @@ p {
 
   .stats-strip,
   .action-grid,
-  .contact-grid {
+  .contact-grid,
+  .account-grid,
+  .filter-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .search-row {
     grid-template-columns: 1fr;
   }
 

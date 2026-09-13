@@ -71,6 +71,57 @@ button:disabled {
   padding: 24px 0;
 }
 
+.menu-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  gap: 4px;
+  border: 1px solid rgba(24, 49, 40, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: #10261d;
+}
+
+.header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-chip {
+  display: grid;
+  gap: 2px;
+  min-height: 42px;
+  justify-content: center;
+  border: 1px solid rgba(24, 49, 40, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.user-chip strong {
+  color: #10261d;
+  font-size: 0.88rem;
+  line-height: 1.1;
+}
+
+.user-chip span {
+  color: #2b8056;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -151,6 +202,10 @@ button:disabled {
   padding: 32px 20px;
 }
 
+.auth-page {
+  min-height: calc(100vh - 190px);
+}
+
 .login-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
@@ -185,6 +240,41 @@ button:disabled {
   color: #60746b;
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.auth-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 6px;
+  border: 1px solid rgba(24, 49, 40, 0.12);
+  border-radius: 8px;
+  background: #edf5e7;
+}
+
+.auth-switch button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  color: #40574e;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.auth-switch button.active {
+  color: #ffffff;
+  background: #1f7a4d;
+}
+
+.auth-notice,
+.small-status {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #1f4a37;
+  background: #dff0d8;
+  font-weight: 750;
 }
 
 .hero-section {
@@ -629,6 +719,78 @@ p {
   gap: 18px;
 }
 
+.account-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.role-card,
+.security-note,
+.rating-panel {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid rgba(24, 49, 40, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(40, 79, 55, 0.08);
+}
+
+.role-card span {
+  color: #60746b;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.role-card strong,
+.security-note strong,
+.rating-panel strong {
+  color: #10261d;
+  font-size: 1.08rem;
+}
+
+.rating-summary {
+  color: #1f4a37;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.rating-row select {
+  min-height: 38px;
+  border: 1px solid rgba(24, 49, 40, 0.18);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #183128;
+  background: #fbfcf6;
+  font: inherit;
+}
+
+.rating-row button {
+  min-height: 38px;
+  border: 1px solid rgba(31, 122, 77, 0.24);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #1f4a37;
+  background: #ffffff;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.rating-row button:hover {
+  color: #ffffff;
+  background: #1f7a4d;
+}
+
 .filter-panel,
 .detail-card,
 .empty-state {
@@ -842,8 +1004,18 @@ fieldset input {
 
 @media (max-width: 860px) {
   .site-header {
-    align-items: flex-start;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-actions {
+    justify-content: flex-end;
+  }
+
+  .menu-toggle {
+    display: grid;
   }
 
   .login-card {
@@ -851,9 +1023,26 @@ fieldset input {
   }
 
   .main-nav {
+    display: none;
+    grid-column: 1 / -1;
     width: 100%;
-    overflow-x: auto;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: visible;
     justify-content: flex-start;
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .main-nav.open {
+    display: flex;
+  }
+
+  .main-nav button {
+    width: 100%;
+    min-width: 0;
+    border-radius: 8px;
+    text-align: left;
   }
 
   .hero-section,
@@ -880,6 +1069,7 @@ fieldset input {
   .action-grid,
   .contact-grid,
   .account-grid,
+  .account-summary,
   .filter-columns {
     grid-template-columns: 1fr;
   }

@@ -23,7 +23,7 @@ if (missingConfig.length > 0) {
 export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 export const db = getFirestore(firebaseApp)
-export const functions = getFunctions(firebaseApp)
+export const functions = getFunctions(firebaseApp, 'australia-southeast2')
 
 const shouldUseEmulators = import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true'
 

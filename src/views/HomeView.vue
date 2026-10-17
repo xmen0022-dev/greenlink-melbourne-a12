@@ -1,7 +1,27 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue'
 import { useGreenLink } from '../composables/useGreenLink.js'
+import { getCommunityImpactSummary } from '../services/cloudFunctionsService.js'
 
 const { goToPage, impactStats, quickActions } = useGreenLink()
+const cloudImpact = ref(null)
+const cloudStatus = ref('loading')
+
+const displayedImpactStats = computed(() => cloudImpact.value ? [
+  { value: cloudImpact.value.counts.greenSpaces, label: 'green spaces available' },
+  { value: cloudImpact.value.counts.nativePlants, label: 'native plants catalogued' },
+  { value: cloudImpact.value.counts.communityEvents, label: 'community events' },
+] : impactStats)
+
+onMounted(async () => {
+  try {
+    cloudImpact.value = await getCommunityImpactSummary()
+    cloudStatus.value = 'live'
+  } catch (error) {
+    console.error('Cloud Functions impact summary failed:', error)
+    cloudStatus.value = 'fallback'
+  }
+})
 </script>
 
 <template>
@@ -24,12 +44,13 @@ const { goToPage, impactStats, quickActions } = useGreenLink()
           <span class="route route-one"></span><span class="route route-two"></span>
         </div>
       </div>
-      <div class="hero-note"><strong>Next event</strong><span>Tree planting registrations are open this week.</span></div>
+      <div class="hero-note"><strong>Next event</strong><span>{{ cloudImpact?.nextEvent ? `${cloudImpact.nextEvent.title} — ${cloudImpact.nextEvent.date}` : 'Tree planting registrations are open this week.' }}</span></div>
     </div>
   </section>
 
   <section class="stats-strip" aria-label="GreenLink impact">
-    <div v-for="stat in impactStats" :key="stat.label"><strong>{{ stat.value }}</strong><span>{{ stat.label }}</span></div>
+    <div v-for="stat in displayedImpactStats" :key="stat.label"><strong>{{ stat.value }}</strong><span>{{ stat.label }}</span></div>
+    <p class="stats-source" role="status">{{ cloudStatus === 'live' ? 'Live Cloud Functions data' : cloudStatus === 'loading' ? 'Loading live data…' : 'Cached catalogue snapshot' }}</p>
   </section>
 
   <section class="content-section">

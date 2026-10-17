@@ -33,12 +33,15 @@ try {
     itemId: 1,
   })
   await assert.rejects(getDoc(doc(otherResidentDb, 'greenlink_saved_items', 'saved-1')))
+  await assert.rejects(setDoc(doc(residentDb, 'greenlink_registrations', 'resident-1_201'), {
+    userId: 'resident-1', eventId: 201, status: 'registered',
+  }))
 
   await setDoc(doc(residentDb, 'users', 'resident-1'), { role: 'resident', name: 'Test resident' })
   await assert.rejects(setDoc(doc(residentDb, 'users', 'resident-1'), { role: 'organiser', name: 'Test resident' }))
   await setDoc(doc(organiserDb, 'greenlink_spaces', 'rule-test-organiser'), { id: 9997, name: 'Organiser park' })
 
-  console.log('Firestore rules verified: public catalogs are read-only, activity is owner-only, and organiser elevation is protected.')
+  console.log('Firestore rules verified: catalogs are read-only, activity is owner-only, direct registrations are blocked, and organiser elevation is protected.')
 } finally {
   await testEnvironment.cleanup()
 }

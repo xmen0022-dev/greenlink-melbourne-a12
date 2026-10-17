@@ -10,6 +10,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { db } from './firebase.js'
+import { registerForEventOnServer } from './cloudFunctionsService.js'
 
 const activityCollections = {
   saved: 'greenlink_saved_items',
@@ -42,12 +43,8 @@ export async function setSavedItem(userId, itemType, itemId, shouldSave) {
   return setDoc(reference, { userId, itemType, itemId, createdAt: serverTimestamp() })
 }
 
-export function saveRegistration(userId, eventId) {
-  return setDoc(
-    doc(db, activityCollections.registrations, activityDocumentId(userId, eventId)),
-    { userId, eventId, status: 'registered', createdAt: serverTimestamp() },
-    { merge: true },
-  )
+export function saveRegistration(_userId, eventId) {
+  return registerForEventOnServer(eventId)
 }
 
 export function saveRating(userId, itemType, itemId, value) {

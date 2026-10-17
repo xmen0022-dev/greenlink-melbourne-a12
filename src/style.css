@@ -527,6 +527,17 @@ p {
   font-weight: 700;
 }
 
+.stats-source {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-top: 1px solid rgba(24, 49, 40, 0.12);
+  padding: 10px 16px;
+  color: #60746b;
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-align: center;
+}
+
 .content-section,
 .split-section,
 .form-section {

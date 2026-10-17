@@ -8,14 +8,16 @@
     "build": "vite build",
     "preview": "vite preview",
     "firebase:login": "firebase login",
-    "firebase:emulators": "firebase emulators:start --only auth,firestore,hosting",
+    "firebase:emulators": "firebase emulators:start --only auth,firestore,functions,hosting",
+    "firebase:deploy:functions": "firebase deploy --only functions",
     "firebase:deploy:hosting": "npm run build && firebase deploy --only hosting",
     "seed:emulator": "node scripts/seed-firestore.mjs",
     "seed:cloud": "node scripts/seed-firestore.mjs --cloud",
     "verify:cloud-catalog": "node scripts/verify-cloud-catalog.mjs",
     "verify:cloud-auth": "node scripts/verify-cloud-auth.mjs",
     "test:auth": "node tests/auth.integration.test.mjs",
-    "test:firestore-rules": "node tests/firestore.rules.test.mjs"
+    "test:firestore-rules": "node tests/firestore.rules.test.mjs",
+    "test:functions": "firebase emulators:exec --only auth,firestore,functions \"npm run seed:emulator && node tests/functions.integration.test.mjs\""
   },
   "dependencies": {
     "@emailjs/browser": "^5.0.3",

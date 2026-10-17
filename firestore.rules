@@ -10,9 +10,64 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function isOrganiser() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'organiser';
+    }
+
     match /users/{userId} {
-      allow create, read, update: if ownsUserDocument(userId);
+      allow create: if ownsUserDocument(userId)
+        && request.resource.data.role == 'resident';
+      allow read: if ownsUserDocument(userId);
+      allow update: if ownsUserDocument(userId)
+        && request.resource.data.role == resource.data.role;
       allow delete: if false;
+    }
+
+    match /{catalog}/{itemId} {
+      allow read: if catalog in [
+        'greenlink_spaces',
+        'greenlink_plants',
+        'greenlink_events',
+        'greenlink_learning_topics',
+        'greenlink_meta'
+      ];
+      allow create, update, delete: if catalog in [
+        'greenlink_spaces',
+        'greenlink_plants',
+        'greenlink_events',
+        'greenlink_learning_topics',
+        'greenlink_meta'
+      ] && isOrganiser();
+    }
+
+    match /{activityCollection}/{activityId} {
+      allow create: if activityCollection in [
+        'greenlink_saved_items',
+        'greenlink_registrations',
+        'greenlink_ratings',
+        'greenlink_volunteer_interests'
+      ] && signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if activityCollection in [
+        'greenlink_saved_items',
+        'greenlink_registrations',
+        'greenlink_ratings',
+        'greenlink_volunteer_interests'
+      ] && signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if activityCollection in [
+        'greenlink_saved_items',
+        'greenlink_registrations',
+        'greenlink_ratings',
+        'greenlink_volunteer_interests'
+      ] && signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Retains the behaviour of the pre-existing Week8 classroom application.
+    // GreenLink never reads from or writes to this legacy collection.
+    match /books/{bookId} {
+      allow read, write: if true;
     }
 
     match /{document=**} {

@@ -4,11 +4,11 @@ import {
   eventLocations,
   eventTypes,
   gardenOptions,
-  greenSpaces,
+  greenSpaces as fallbackGreenSpaces,
   impactStats,
-  initialEvents,
-  learningTopics,
-  nativePlants,
+  initialEvents as fallbackEvents,
+  learningTopics as fallbackLearningTopics,
+  nativePlants as fallbackNativePlants,
   pages,
   plantOptions,
   quickActions,
@@ -20,6 +20,13 @@ const users = ref([
   { id: 1, name: 'GreenLink Resident', email: 'resident@greenlink.test', password: 'Resident1', role: 'resident' },
   { id: 2, name: 'Event Organiser', email: 'organiser@greenlink.test', password: 'Organiser1', role: 'organiser' },
 ])
+
+const greenSpaces = ref([...fallbackGreenSpaces])
+const nativePlants = ref([...fallbackNativePlants])
+const learningTopics = ref([...fallbackLearningTopics])
+const initialEvents = ref([...fallbackEvents])
+const catalogLoading = ref(false)
+const catalogError = ref('')
 
 const loginForm = ref({ email: '', password: '' })
 const registerForm = ref({ name: '', email: '', password: '', role: 'resident' })
@@ -68,13 +75,13 @@ let navigate = (target) => {
   activePage.value = typeof target === 'string' ? target : target.name
 }
 
-const communityEvents = computed(() => [...initialEvents, ...createdEvents.value])
+const communityEvents = computed(() => [...initialEvents.value, ...createdEvents.value])
 const isOrganiser = computed(() => currentUser.value?.role === 'organiser')
 const userRoleLabel = computed(() => (currentUser.value?.role === 'organiser' ? 'Organiser' : 'Resident'))
 
 const filteredSpaces = computed(() => {
   const search = searchInput.value.trim().toLowerCase()
-  return greenSpaces.filter((space) => {
+  return greenSpaces.value.filter((space) => {
     const matchesType = activeSpaceType.value === 'All' || space.type === activeSpaceType.value
     const matchesSearch = !search || space.name.toLowerCase().includes(search) || space.suburb.toLowerCase().includes(search)
     return matchesType && matchesSearch
@@ -83,7 +90,7 @@ const filteredSpaces = computed(() => {
 
 const filteredPlants = computed(() => {
   if (!hasSearchedPlants.value) return []
-  return nativePlants.filter((plant) => {
+  return nativePlants.value.filter((plant) => {
     const matchesSunlight = selectedSunlight.value.length === 0 || selectedSunlight.value.includes(plant.sunlight)
     const matchesGarden = selectedGardenTypes.value.length === 0 || selectedGardenTypes.value.includes(plant.garden)
     const matchesType = selectedPlantTypes.value.length === 0 || selectedPlantTypes.value.includes(plant.type)
@@ -98,17 +105,42 @@ const filteredEvents = computed(() => communityEvents.value.filter((event) => {
   return matchesLocation && matchesDate && matchesType
 }))
 
-const savedSpaces = computed(() => greenSpaces.filter((item) => isSaved('space', item.id)))
-const savedPlants = computed(() => nativePlants.filter((item) => isSaved('plant', item.id)))
+const savedSpaces = computed(() => greenSpaces.value.filter((item) => isSaved('space', item.id)))
+const savedPlants = computed(() => nativePlants.value.filter((item) => isSaved('plant', item.id)))
 const savedEvents = computed(() => communityEvents.value.filter((item) => isSaved('event', item.id)))
 const registeredEvents = computed(() => communityEvents.value.filter((event) => registeredEventIds.value.includes(event.id)))
 const organiserEvents = computed(() => createdEvents.value.filter((event) => event.ownerId === currentUser.value?.id))
 
 const detailData = computed(() => {
   if (!detailItem.value) return null
-  const source = { space: greenSpaces, plant: nativePlants, event: communityEvents.value, learn: learningTopics }[detailItem.value.type]
+  const source = {
+    space: greenSpaces.value,
+    plant: nativePlants.value,
+    event: communityEvents.value,
+    learn: learningTopics.value,
+  }[detailItem.value.type]
   return source.find((item) => item.id === detailItem.value.id)
 })
+
+async function loadCatalogs() {
+  catalogLoading.value = true
+  catalogError.value = ''
+
+  try {
+    const { fetchCatalogs } = await import('../services/catalogService.js')
+    const catalogs = await fetchCatalogs()
+
+    if (catalogs.spaces.length) greenSpaces.value = catalogs.spaces
+    if (catalogs.plants.length) nativePlants.value = catalogs.plants
+    if (catalogs.events.length) initialEvents.value = catalogs.events
+    if (catalogs.learningTopics.length) learningTopics.value = catalogs.learningTopics
+  } catch (error) {
+    catalogError.value = 'Live catalog data is unavailable. Showing the built-in catalog.'
+    console.warn('GreenLink catalog fallback is active.', error)
+  } finally {
+    catalogLoading.value = false
+  }
+}
 
 function sanitizeInput(value) {
   return String(value).trim().replace(/[<>]/g, '')
@@ -413,6 +445,7 @@ function submitRating(type, id) {
 
 const store = {
   pages, greenSpaces, nativePlants, learningTopics, impactStats, quickActions,
+  catalogLoading, catalogError,
   spaceTypes, sunlightOptions, gardenOptions, plantOptions, eventTypes, eventLocations, eventDates,
   loginForm, registerForm, interestForm, newEventForm,
   loginErrors, registerErrors, interestErrors, eventErrors,
@@ -428,7 +461,7 @@ const store = {
   submitLogin, submitRegister, logout, submitInterest, submitNewEvent, findPlants,
   resetPlantFilters, toggleSaved, isSaved, registerEvent, ratingKey, setRatingInput,
   averageRating, ratingCount, submitRating, configureNavigation, syncRoute,
-  setAuthRedirect, setDetailFromRoute,
+  setAuthRedirect, setDetailFromRoute, loadCatalogs,
 }
 
 export function useGreenLink() {

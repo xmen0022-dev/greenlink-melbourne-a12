@@ -16,11 +16,6 @@ import {
   sunlightOptions,
 } from '../data/catalog.js'
 
-const users = ref([
-  { id: 1, name: 'GreenLink Resident', email: 'resident@greenlink.test', password: 'Resident1', role: 'resident' },
-  { id: 2, name: 'Event Organiser', email: 'organiser@greenlink.test', password: 'Organiser1', role: 'organiser' },
-])
-
 const greenSpaces = ref([...fallbackGreenSpaces])
 const nativePlants = ref([...fallbackNativePlants])
 const learningTopics = ref([...fallbackLearningTopics])
@@ -44,6 +39,8 @@ const activePage = ref('home')
 const requestedPage = ref('home')
 const authMode = ref('login')
 const authNotice = ref('')
+const authReady = ref(false)
+const authSubmitting = ref(false)
 const isMobileNavOpen = ref(false)
 const detailItem = ref(null)
 const interestSuccess = ref(false)
@@ -61,14 +58,20 @@ const selectedEventTypes = ref([])
 const savedItems = ref([])
 const registeredEventIds = ref([])
 const createdEvents = ref([])
-const ratings = ref({
+const baselineRatings = {
   'space-1': [5, 4],
   'space-2': [4],
   'plant-101': [5],
   'event-201': [4, 5],
-})
+}
+const ratings = ref({ ...baselineRatings })
+const userRatings = ref({})
 const ratingInputs = ref({})
 const ratingMessages = ref({})
+const activityLoading = ref(false)
+const activityError = ref('')
+const registrationMessages = ref({})
+const interestEmailStatus = ref('')
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 let navigate = (target) => {
@@ -109,7 +112,7 @@ const savedSpaces = computed(() => greenSpaces.value.filter((item) => isSaved('s
 const savedPlants = computed(() => nativePlants.value.filter((item) => isSaved('plant', item.id)))
 const savedEvents = computed(() => communityEvents.value.filter((item) => isSaved('event', item.id)))
 const registeredEvents = computed(() => communityEvents.value.filter((event) => registeredEventIds.value.includes(event.id)))
-const organiserEvents = computed(() => createdEvents.value.filter((event) => event.ownerId === currentUser.value?.id))
+const organiserEvents = computed(() => communityEvents.value.filter((event) => event.ownerId === currentUser.value?.id))
 
 const detailData = computed(() => {
   if (!detailItem.value) return null
@@ -139,6 +142,58 @@ async function loadCatalogs() {
     console.warn('GreenLink catalog fallback is active.', error)
   } finally {
     catalogLoading.value = false
+  }
+}
+
+function resetUserActivity() {
+  savedItems.value = []
+  registeredEventIds.value = []
+  ratings.value = { ...baselineRatings }
+  userRatings.value = {}
+  ratingInputs.value = {}
+  ratingMessages.value = {}
+  activityError.value = ''
+  registrationMessages.value = {}
+  interestEmailStatus.value = ''
+}
+
+async function sendAccountEmail(payload) {
+  const { sendConfirmationEmail } = await import('../services/emailService.js')
+  return sendConfirmationEmail(payload)
+}
+
+function describeEmailError(error) {
+  const status = Number(error?.status)
+  const rawMessage = error?.text || error?.message || 'Unknown EmailJS error.'
+  const safeMessage = String(rawMessage)
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 180)
+
+  return `${Number.isFinite(status) ? `EmailJS ${status}: ` : ''}${safeMessage}`
+}
+
+async function restoreUserActivity(userId) {
+  activityLoading.value = true
+  activityError.value = ''
+  try {
+    const { loadUserActivity } = await import('../services/activityService.js')
+    const activity = await loadUserActivity(userId)
+    savedItems.value = activity.savedItems.map((item) => `${item.itemType}-${item.itemId}`)
+    registeredEventIds.value = activity.registrations.map((item) => item.eventId)
+    ratings.value = { ...baselineRatings }
+    userRatings.value = {}
+    for (const rating of activity.userRatings) {
+      const key = `${rating.itemType}-${rating.itemId}`
+      ratings.value[key] = [...(ratings.value[key] || []), rating.value]
+      userRatings.value[key] = rating.value
+    }
+  } catch (error) {
+    activityError.value = 'Your saved activity could not be loaded. Please refresh and try again.'
+    console.warn('GreenLink activity restoration failed.', error)
+  } finally {
+    activityLoading.value = false
   }
 }
 
@@ -186,8 +241,6 @@ function validateRegisterEmail(blur) {
     if (blur) registerErrors.value.email = 'Email is required.'
   } else if (!validateEmail(email)) {
     if (blur) registerErrors.value.email = 'Enter a valid email address.'
-  } else if (users.value.some((user) => user.email === email)) {
-    if (blur) registerErrors.value.email = 'This email is already registered.'
   } else registerErrors.value.email = null
 }
 
@@ -198,12 +251,6 @@ function validateRegisterPassword(blur) {
   } else if (!validatePasswordValue(password)) {
     if (blur) registerErrors.value.password = 'Use at least 6 characters with letters and numbers.'
   } else registerErrors.value.password = null
-}
-
-function validateRegisterRole(blur) {
-  if (!['resident', 'organiser'].includes(registerForm.value.role)) {
-    if (blur) registerErrors.value.role = 'Choose a valid role.'
-  } else registerErrors.value.role = null
 }
 
 function validateInterestName(blur) {
@@ -278,9 +325,10 @@ function closeDetail() {
   navigate(parentPage)
 }
 
-function finishAuth(user) {
+function finishAuth(user, shouldRedirect = true) {
   currentUser.value = user
-  isLoggedIn.value = true
+  isLoggedIn.value = Boolean(user)
+  if (!user || !shouldRedirect) return
   isMobileNavOpen.value = false
   loginForm.value.password = ''
   registerForm.value.password = ''
@@ -290,45 +338,105 @@ function finishAuth(user) {
   navigate(destination)
 }
 
-function submitLogin() {
+function authenticationMessage(error, fallback) {
+  return {
+    'auth/email-already-in-use': 'This email is already registered. Try logging in instead.',
+    'auth/invalid-credential': 'The email or password is incorrect.',
+    'auth/invalid-email': 'Enter a valid email address.',
+    'auth/network-request-failed': 'Unable to reach Firebase. Check your connection and try again.',
+    'auth/operation-not-allowed': 'Email/password sign-in has not been enabled for this Firebase project.',
+    'auth/too-many-requests': 'Too many attempts. Please wait before trying again.',
+    'auth/user-disabled': 'This account has been disabled.',
+    'auth/weak-password': 'Use a stronger password with at least 6 characters.',
+  }[error?.code] || fallback
+}
+
+async function submitLogin() {
   validateLoginEmail(true)
   validateLoginPassword(true)
   loginErrors.value.account = null
   if (loginErrors.value.email || loginErrors.value.password) return
-  const email = loginForm.value.email.trim().toLowerCase()
-  const user = users.value.find((item) => item.email === email && item.password === loginForm.value.password)
-  if (!user) {
-    loginErrors.value.account = 'Account not found. Register first or use a demo account.'
-    return
+
+  authSubmitting.value = true
+  try {
+    const { loginWithEmail } = await import('../services/authService.js')
+    const user = await loginWithEmail(loginForm.value.email.trim().toLowerCase(), loginForm.value.password)
+    finishAuth(user)
+  } catch (error) {
+    loginErrors.value.account = authenticationMessage(error, 'Unable to log in. Please try again.')
+  } finally {
+    authSubmitting.value = false
   }
-  finishAuth(user)
 }
 
-function submitRegister() {
+async function submitRegister() {
   validateRegisterName(true)
   validateRegisterEmail(true)
   validateRegisterPassword(true)
-  validateRegisterRole(true)
-  if (registerErrors.value.name || registerErrors.value.email || registerErrors.value.password || registerErrors.value.role) return
-  const user = {
-    id: Date.now(),
-    name: sanitizeInput(registerForm.value.name),
-    email: sanitizeInput(registerForm.value.email).toLowerCase(),
-    password: registerForm.value.password,
-    role: registerForm.value.role,
+  registerErrors.value.role = null
+  if (registerErrors.value.name || registerErrors.value.email || registerErrors.value.password) return
+
+  authSubmitting.value = true
+  try {
+    const { registerResident } = await import('../services/authService.js')
+    const user = await registerResident({
+      name: sanitizeInput(registerForm.value.name),
+      email: sanitizeInput(registerForm.value.email).toLowerCase(),
+      password: registerForm.value.password,
+    })
+    registerForm.value = { name: '', email: '', password: '', role: 'resident' }
+    finishAuth(user)
+  } catch (error) {
+    registerErrors.value.email = authenticationMessage(error, 'Unable to create the account. Please try again.')
+  } finally {
+    authSubmitting.value = false
   }
-  users.value.push(user)
-  registerForm.value = { name: '', email: '', password: '', role: 'resident' }
-  finishAuth(user)
 }
 
-function logout() {
+async function logout() {
+  const { logoutFromFirebase } = await import('../services/authService.js')
+  await logoutFromFirebase().catch(() => {})
   isLoggedIn.value = false
   currentUser.value = null
   detailItem.value = null
   isMobileNavOpen.value = false
   loginErrors.value = { email: null, password: null, account: null }
   navigate('home')
+}
+
+let authInitialisation
+
+function initializeAuth() {
+  if (authInitialisation) return authInitialisation
+
+  authInitialisation = import('../services/authService.js')
+    .then(({ observeAuthentication }) => new Promise((resolve) => {
+      let initialStateHandled = false
+      observeAuthentication((user, error) => {
+        finishAuth(user, false)
+        if (user) {
+          void restoreUserActivity(user.id)
+          if (!interestForm.value.name) interestForm.value.name = user.name
+          if (!interestForm.value.email) interestForm.value.email = user.email
+        } else resetUserActivity()
+        if (error) authNotice.value = authenticationMessage(error, 'Unable to restore your session.')
+        authReady.value = true
+        if (!initialStateHandled) {
+          initialStateHandled = true
+          resolve()
+        }
+      })
+    }))
+    .catch((error) => {
+      authNotice.value = authenticationMessage(error, 'Unable to initialise authentication.')
+      authReady.value = true
+    })
+
+  return authInitialisation
+}
+
+function waitForAuthReady() {
+  return initializeAuth()
 }
 
 function configureNavigation(handler) {
@@ -350,33 +458,65 @@ function setDetailFromRoute(type, id) {
   detailItem.value = { type, id: Number.isNaN(numericId) ? id : numericId }
 }
 
-function submitInterest() {
+async function submitInterest() {
   interestSuccess.value = false
+  interestEmailStatus.value = ''
   validateInterestName(true)
   validateInterestEmail(true)
   validateSuburb(true)
   validateInterestArea(true)
   if (interestErrors.value.name || interestErrors.value.email || interestErrors.value.suburb || interestErrors.value.interest) return
-  interestSuccess.value = true
-  interestForm.value = { name: '', email: '', suburb: '', interest: '' }
-  interestErrors.value = { name: null, email: null, suburb: null, interest: null }
+  try {
+    const { saveVolunteerInterest } = await import('../services/activityService.js')
+    const interest = {
+      name: sanitizeInput(interestForm.value.name),
+      email: sanitizeInput(interestForm.value.email).toLowerCase(),
+      suburb: sanitizeInput(interestForm.value.suburb),
+      interest: interestForm.value.interest,
+    }
+    await saveVolunteerInterest(currentUser.value.id, interest)
+    interestSuccess.value = true
+    interestForm.value = { name: currentUser.value.name, email: currentUser.value.email, suburb: '', interest: '' }
+    interestErrors.value = { name: null, email: null, suburb: null, interest: null }
+
+    try {
+      await sendAccountEmail({
+        toName: interest.name,
+        toEmail: interest.email,
+        subject: 'GreenLink volunteer interest received',
+        heading: 'Thanks for volunteering with GreenLink Melbourne.',
+        message: `We recorded your interest in ${interest.interest.replaceAll('-', ' ')} activities near ${interest.suburb}.`,
+      })
+      interestEmailStatus.value = 'A confirmation email has been sent.'
+    } catch (error) {
+      const reason = describeEmailError(error)
+      console.error('EmailJS volunteer confirmation failed:', reason)
+      interestEmailStatus.value = `Your interest was saved, but the confirmation email failed. ${reason}`
+    }
+  } catch (error) {
+    interestErrors.value.interest = 'Unable to save your interest. Please try again.'
+  }
 }
 
-function submitNewEvent() {
+async function submitNewEvent() {
   eventSuccess.value = false
   if (!isOrganiser.value || !validateNewEvent()) return
-  createdEvents.value.push({
-    id: Date.now(),
-    title: sanitizeInput(newEventForm.value.title),
-    location: sanitizeInput(newEventForm.value.location),
-    date: sanitizeInput(newEventForm.value.date),
-    dateGroup: newEventForm.value.dateGroup,
-    tag: newEventForm.value.tag,
-    summary: sanitizeInput(newEventForm.value.summary),
-    ownerId: currentUser.value.id,
-  })
-  newEventForm.value = { title: '', location: '', date: '', dateGroup: 'Next month', tag: 'Tree Planting', summary: '' }
-  eventSuccess.value = true
+  try {
+    const { publishEvent } = await import('../services/activityService.js')
+    const event = await publishEvent(currentUser.value.id, {
+      title: sanitizeInput(newEventForm.value.title),
+      location: sanitizeInput(newEventForm.value.location),
+      date: sanitizeInput(newEventForm.value.date),
+      dateGroup: newEventForm.value.dateGroup,
+      tag: newEventForm.value.tag,
+      summary: sanitizeInput(newEventForm.value.summary),
+    })
+    createdEvents.value.push(event)
+    newEventForm.value = { title: '', location: '', date: '', dateGroup: 'Next month', tag: 'Tree Planting', summary: '' }
+    eventSuccess.value = true
+  } catch (error) {
+    eventErrors.value.summary = 'Unable to publish this event. Please try again.'
+  }
 }
 
 function findPlants() {
@@ -390,27 +530,61 @@ function resetPlantFilters() {
   hasSearchedPlants.value = false
 }
 
-function toggleSaved(type, id) {
+async function toggleSaved(type, id) {
   if (!isLoggedIn.value) {
     openAuth('login', activePage.value)
     return
   }
   const key = `${type}-${id}`
-  savedItems.value = savedItems.value.includes(key)
-    ? savedItems.value.filter((item) => item !== key)
-    : [...savedItems.value, key]
+  const shouldSave = !savedItems.value.includes(key)
+  try {
+    const { setSavedItem } = await import('../services/activityService.js')
+    await setSavedItem(currentUser.value.id, type, id, shouldSave)
+    savedItems.value = shouldSave
+      ? [...savedItems.value, key]
+      : savedItems.value.filter((item) => item !== key)
+    activityError.value = ''
+  } catch (error) {
+    activityError.value = 'Unable to update your saved items. Please try again.'
+  }
 }
 
 function isSaved(type, id) {
   return savedItems.value.includes(`${type}-${id}`)
 }
 
-function registerEvent(id) {
+async function registerEvent(id) {
   if (!isLoggedIn.value) {
     openAuth('login', 'events')
     return
   }
-  if (!registeredEventIds.value.includes(id)) registeredEventIds.value.push(id)
+  if (registeredEventIds.value.includes(id)) return
+  try {
+    const { saveRegistration } = await import('../services/activityService.js')
+    await saveRegistration(currentUser.value.id, id)
+    registeredEventIds.value.push(id)
+    activityError.value = ''
+    registrationMessages.value[id] = 'Registration saved. Sending confirmation email…'
+
+    const event = communityEvents.value.find((item) => item.id === id)
+    try {
+      await sendAccountEmail({
+        toName: currentUser.value.name,
+        toEmail: currentUser.value.email,
+        subject: `GreenLink registration: ${event?.title || 'Community event'}`,
+        heading: `You are registered for ${event?.title || 'a GreenLink community event'}.`,
+        message: `${event?.date || 'Date to be confirmed'} at ${event?.location || 'a location to be confirmed'}.`,
+      })
+      registrationMessages.value[id] = 'Registered. A confirmation email has been sent.'
+    } catch (error) {
+      const reason = describeEmailError(error)
+      console.error('EmailJS event confirmation failed:', reason)
+      registrationMessages.value[id] = `Registered successfully, but the confirmation email failed. ${reason}`
+    }
+  } catch (error) {
+    activityError.value = 'Unable to register for this event. Please try again.'
+    registrationMessages.value[id] = 'Registration could not be saved. Please try again.'
+  }
 }
 
 function ratingKey(type, id) {
@@ -431,37 +605,51 @@ function ratingCount(type, id) {
   return ratings.value[ratingKey(type, id)]?.length || 0
 }
 
-function submitRating(type, id) {
+async function submitRating(type, id) {
   const key = ratingKey(type, id)
   const value = ratingInputs.value[key]
   if (!value) {
     ratingMessages.value[key] = 'Choose a rating first.'
     return
   }
-  ratings.value[key] = [...(ratings.value[key] || []), value]
-  ratingInputs.value[key] = ''
-  ratingMessages.value[key] = 'Rating saved.'
+  try {
+    const { saveRating } = await import('../services/activityService.js')
+    await saveRating(currentUser.value.id, type, id, value)
+    const values = [...(ratings.value[key] || [])]
+    const previousValue = userRatings.value[key]
+    const previousIndex = previousValue === undefined ? -1 : values.lastIndexOf(previousValue)
+    if (previousIndex >= 0) values.splice(previousIndex, 1)
+    ratings.value[key] = [...values, value]
+    userRatings.value[key] = value
+    ratingInputs.value[key] = ''
+    ratingMessages.value[key] = 'Rating saved to your account.'
+  } catch (error) {
+    ratingMessages.value[key] = 'Unable to save your rating. Please try again.'
+  }
 }
 
 const store = {
   pages, greenSpaces, nativePlants, learningTopics, impactStats, quickActions,
   catalogLoading, catalogError,
+  activityLoading, activityError,
+  registrationMessages, interestEmailStatus,
   spaceTypes, sunlightOptions, gardenOptions, plantOptions, eventTypes, eventLocations, eventDates,
   loginForm, registerForm, interestForm, newEventForm,
   loginErrors, registerErrors, interestErrors, eventErrors,
-  isLoggedIn, currentUser, activePage, requestedPage, authMode, authNotice, isMobileNavOpen, detailItem,
+  isLoggedIn, currentUser, activePage, requestedPage, authMode, authNotice, authReady, authSubmitting,
+  isMobileNavOpen, detailItem,
   interestSuccess, eventSuccess, searchInput, activeSpaceType, spaceView,
   selectedSunlight, selectedGardenTypes, selectedPlantTypes, hasSearchedPlants,
   eventLocation, eventDate, selectedEventTypes, registeredEventIds, ratingInputs, ratingMessages,
   communityEvents, isOrganiser, userRoleLabel, filteredSpaces, filteredPlants, filteredEvents,
   savedSpaces, savedPlants, savedEvents, registeredEvents, organiserEvents, detailData,
   validateLoginEmail, validateLoginPassword, validateRegisterName, validateRegisterEmail,
-  validateRegisterPassword, validateRegisterRole, validateInterestName, validateInterestEmail,
+  validateRegisterPassword, validateInterestName, validateInterestEmail,
   validateSuburb, validateInterestArea, openAuth, goToPage, showDetail, closeDetail,
   submitLogin, submitRegister, logout, submitInterest, submitNewEvent, findPlants,
   resetPlantFilters, toggleSaved, isSaved, registerEvent, ratingKey, setRatingInput,
   averageRating, ratingCount, submitRating, configureNavigation, syncRoute,
-  setAuthRedirect, setDetailFromRoute, loadCatalogs,
+  setAuthRedirect, setDetailFromRoute, loadCatalogs, initializeAuth, waitForAuthReady,
 }
 
 export function useGreenLink() {

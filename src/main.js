@@ -4,5 +4,7 @@ import App from './App.vue'
 import router from './router/index.js'
 import { useGreenLink } from './composables/useGreenLink.js'
 
+const store = useGreenLink()
+await store.initializeAuth()
 createApp(App).use(router).mount('#app')
-void useGreenLink().loadCatalogs()
+void store.loadCatalogs()

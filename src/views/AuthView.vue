@@ -2,7 +2,7 @@
 import { useGreenLink } from '../composables/useGreenLink.js'
 
 const {
-  authMode, authNotice, loginErrors, loginForm, registerErrors, registerForm,
+  authMode, authNotice, authSubmitting, loginErrors, loginForm, registerErrors, registerForm,
   submitLogin, submitRegister, validateLoginEmail, validateLoginPassword,
   validateRegisterEmail, validateRegisterName, validateRegisterPassword,
 } = useGreenLink()
@@ -34,15 +34,15 @@ const {
             <p v-if="loginErrors.password" class="field-error">{{ loginErrors.password }}</p>
           </div>
           <p v-if="loginErrors.account" class="field-error">{{ loginErrors.account }}</p>
-          <button class="button primary form-submit" type="submit">Log in</button>
-          <p class="demo-note">Demo accounts: resident@greenlink.test / Resident1, organiser@greenlink.test / Organiser1.</p>
+          <button class="button primary form-submit" type="submit" :disabled="authSubmitting">{{ authSubmitting ? 'Logging in…' : 'Log in' }}</button>
+          <p class="demo-note">Authentication is securely handled by Firebase. Register below if you do not have an account.</p>
         </form>
         <form v-else class="interest-form" novalidate @submit.prevent="submitRegister">
           <div class="form-field"><label for="register-name">Full name</label><input id="register-name" v-model="registerForm.name" type="text" autocomplete="name" :aria-invalid="Boolean(registerErrors.name)" @blur="validateRegisterName(true)" @input="validateRegisterName(false)" /><p v-if="registerErrors.name" class="field-error">{{ registerErrors.name }}</p></div>
           <div class="form-field"><label for="register-email">Email address</label><input id="register-email" v-model="registerForm.email" type="email" autocomplete="email" :aria-invalid="Boolean(registerErrors.email)" @blur="validateRegisterEmail(true)" @input="validateRegisterEmail(false)" /><p v-if="registerErrors.email" class="field-error">{{ registerErrors.email }}</p></div>
           <div class="form-field"><label for="register-password">Password</label><input id="register-password" v-model="registerForm.password" type="password" autocomplete="new-password" :aria-invalid="Boolean(registerErrors.password)" @blur="validateRegisterPassword(true)" @input="validateRegisterPassword(false)" /><p v-if="registerErrors.password" class="field-error">{{ registerErrors.password }}</p></div>
-          <div class="form-field"><label for="register-role">Account role</label><select id="register-role" v-model="registerForm.role" :aria-invalid="Boolean(registerErrors.role)"><option value="resident">Resident</option><option value="organiser">Organiser</option></select><p v-if="registerErrors.role" class="field-error">{{ registerErrors.role }}</p></div>
-          <button class="button primary form-submit" type="submit">Create account</button>
+          <p class="demo-note">New accounts are created as residents. Organiser access is granted separately by an administrator.</p>
+          <button class="button primary form-submit" type="submit" :disabled="authSubmitting">{{ authSubmitting ? 'Creating account…' : 'Create account' }}</button>
         </form>
       </div>
     </section>

@@ -19,7 +19,7 @@ const {
       <p class="eyebrow">Organiser tools</p>
       <h2>Create a community event.</h2>
       <p>This page is protected and only available to organiser accounts.</p>
-      <p v-if="organiserEvents.length">You have created {{ organiserEvents.length }} event(s) in this session.</p>
+      <p v-if="organiserEvents.length">You have published {{ organiserEvents.length }} event(s).</p>
     </div>
     <form class="interest-form" novalidate @submit.prevent="submitNewEvent">
       <div class="form-field"><label for="new-event-title">Event title</label><input id="new-event-title" v-model="newEventForm.title" type="text" :aria-invalid="Boolean(eventErrors.title)" /><p v-if="eventErrors.title" class="field-error">{{ eventErrors.title }}</p></div>

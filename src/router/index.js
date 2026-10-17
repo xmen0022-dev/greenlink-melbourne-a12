@@ -41,7 +41,9 @@ store.configureNavigation((target) => {
   return router.push(target)
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  await store.waitForAuthReady()
+
   if (to.meta.requiresAuth && !store.isLoggedIn.value) {
     store.setAuthRedirect(to.fullPath)
     return { name: 'auth', query: { redirect: to.fullPath } }

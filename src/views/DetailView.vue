@@ -5,7 +5,7 @@ import RatingPanel from '../components/common/RatingPanel.vue'
 import { useGreenLink } from '../composables/useGreenLink.js'
 
 const route = useRoute()
-const { closeDetail, detailData, detailItem, isSaved, registerEvent, registeredEventIds, setDetailFromRoute, toggleSaved } = useGreenLink()
+const { closeDetail, detailData, detailItem, isSaved, registerEvent, registeredEventIds, registrationMessages, setDetailFromRoute, toggleSaved } = useGreenLink()
 
 watch(
   () => [route.params.type, route.params.id],
@@ -33,6 +33,7 @@ onBeforeUnmount(() => {
         <button v-if="detailItem.type !== 'learn'" class="button secondary" type="button" @click="toggleSaved(detailItem.type, detailItem.id)">{{ isSaved(detailItem.type, detailItem.id) ? 'Saved' : 'Save' }}</button>
         <button v-if="detailItem.type === 'event'" class="button primary" type="button" :disabled="registeredEventIds.includes(detailItem.id)" @click="registerEvent(detailItem.id)">{{ registeredEventIds.includes(detailItem.id) ? 'Registered' : 'Register Interest' }}</button>
       </div>
+      <p v-if="detailItem.type === 'event' && registrationMessages[detailItem.id]" class="small-status" role="status">{{ registrationMessages[detailItem.id] }}</p>
     </div>
   </section>
   <section v-else class="content-section page-section">

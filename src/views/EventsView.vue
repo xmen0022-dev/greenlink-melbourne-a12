@@ -4,7 +4,7 @@ import { useGreenLink } from '../composables/useGreenLink.js'
 const {
   averageRating, eventDate, eventDates, eventLocation, eventLocations, eventTypes,
   filteredEvents, isSaved, ratingCount, registerEvent, registeredEventIds,
-  selectedEventTypes, showDetail, toggleSaved,
+  registrationMessages, selectedEventTypes, showDetail, toggleSaved,
 } = useGreenLink()
 </script>
 
@@ -19,7 +19,7 @@ const {
     <div class="event-list">
       <article v-for="event in filteredEvents" :key="event.id" class="event-item">
         <div><span class="event-date">{{ event.date }}</span><h3>{{ event.title }}</h3><p>{{ event.location }}</p><p>{{ event.summary }}</p><p class="rating-summary">Average rating: {{ averageRating('event', event.id) }} / 5 ({{ ratingCount('event', event.id) }} reviews)</p></div>
-        <div class="event-actions"><span class="event-tag">{{ event.tag }}</span><button type="button" @click="showDetail('event', event.id)">View Details</button><button type="button" @click="toggleSaved('event', event.id)">{{ isSaved('event', event.id) ? 'Saved' : 'Save' }}</button><button type="button" :disabled="registeredEventIds.includes(event.id)" @click="registerEvent(event.id)">{{ registeredEventIds.includes(event.id) ? 'Registered' : 'Register Interest' }}</button></div>
+        <div class="event-actions"><span class="event-tag">{{ event.tag }}</span><button type="button" @click="showDetail('event', event.id)">View Details</button><button type="button" @click="toggleSaved('event', event.id)">{{ isSaved('event', event.id) ? 'Saved' : 'Save' }}</button><button type="button" :disabled="registeredEventIds.includes(event.id)" @click="registerEvent(event.id)">{{ registeredEventIds.includes(event.id) ? 'Registered' : 'Register Interest' }}</button><p v-if="registrationMessages[event.id]" class="small-status" role="status">{{ registrationMessages[event.id] }}</p></div>
       </article>
     </div>
   </section>

@@ -13,9 +13,12 @@
     "seed:emulator": "node scripts/seed-firestore.mjs",
     "seed:cloud": "node scripts/seed-firestore.mjs --cloud",
     "verify:cloud-catalog": "node scripts/verify-cloud-catalog.mjs",
+    "verify:cloud-auth": "node scripts/verify-cloud-auth.mjs",
+    "test:auth": "node tests/auth.integration.test.mjs",
     "test:firestore-rules": "node tests/firestore.rules.test.mjs"
   },
   "dependencies": {
+    "@emailjs/browser": "^5.0.3",
     "firebase": "^13.0.0",
     "vue": "^3.5.41",
     "vue-router": "^4.6.4"

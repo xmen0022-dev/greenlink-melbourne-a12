@@ -64,6 +64,9 @@ const ratingInputs = ref({})
 const ratingMessages = ref({})
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+let navigate = (target) => {
+  activePage.value = typeof target === 'string' ? target : target.name
+}
 
 const communityEvents = computed(() => [...initialEvents, ...createdEvents.value])
 const isOrganiser = computed(() => currentUser.value?.role === 'organiser')
@@ -209,10 +212,10 @@ function validateNewEvent() {
 function openAuth(mode = 'login', target = 'home') {
   authMode.value = mode
   requestedPage.value = target
-  activePage.value = 'auth'
   detailItem.value = null
   isMobileNavOpen.value = false
   authNotice.value = target === 'home' ? '' : 'Please log in or register to continue.'
+  navigate('auth')
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -222,8 +225,8 @@ function goToPage(page) {
     openAuth('login', page)
     return
   }
-  activePage.value = page
   detailItem.value = null
+  navigate(page)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -233,11 +236,14 @@ function showDetail(type, id) {
     return
   }
   detailItem.value = { type, id }
+  navigate({ name: 'detail', params: { type, id } })
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function closeDetail() {
+  const parentPage = { space: 'spaces', plant: 'plants', event: 'events', learn: 'learn' }[detailItem.value?.type] || 'home'
   detailItem.value = null
+  navigate(parentPage)
 }
 
 function finishAuth(user) {
@@ -247,8 +253,9 @@ function finishAuth(user) {
   loginForm.value.password = ''
   registerForm.value.password = ''
   authNotice.value = ''
-  activePage.value = requestedPage.value === 'auth' ? 'home' : requestedPage.value
+  const destination = requestedPage.value === 'auth' ? 'home' : requestedPage.value
   requestedPage.value = 'home'
+  navigate(destination)
 }
 
 function submitLogin() {
@@ -286,10 +293,29 @@ function submitRegister() {
 function logout() {
   isLoggedIn.value = false
   currentUser.value = null
-  activePage.value = 'home'
   detailItem.value = null
   isMobileNavOpen.value = false
   loginErrors.value = { email: null, password: null, account: null }
+  navigate('home')
+}
+
+function configureNavigation(handler) {
+  navigate = handler
+}
+
+function syncRoute(page) {
+  activePage.value = page
+}
+
+function setAuthRedirect(destination) {
+  requestedPage.value = destination
+  authMode.value = 'login'
+  authNotice.value = 'Please log in or register to continue.'
+}
+
+function setDetailFromRoute(type, id) {
+  const numericId = Number(id)
+  detailItem.value = { type, id: Number.isNaN(numericId) ? id : numericId }
 }
 
 function submitInterest() {
@@ -390,7 +416,7 @@ const store = {
   spaceTypes, sunlightOptions, gardenOptions, plantOptions, eventTypes, eventLocations, eventDates,
   loginForm, registerForm, interestForm, newEventForm,
   loginErrors, registerErrors, interestErrors, eventErrors,
-  isLoggedIn, currentUser, activePage, authMode, authNotice, isMobileNavOpen, detailItem,
+  isLoggedIn, currentUser, activePage, requestedPage, authMode, authNotice, isMobileNavOpen, detailItem,
   interestSuccess, eventSuccess, searchInput, activeSpaceType, spaceView,
   selectedSunlight, selectedGardenTypes, selectedPlantTypes, hasSearchedPlants,
   eventLocation, eventDate, selectedEventTypes, registeredEventIds, ratingInputs, ratingMessages,
@@ -401,7 +427,8 @@ const store = {
   validateSuburb, validateInterestArea, openAuth, goToPage, showDetail, closeDetail,
   submitLogin, submitRegister, logout, submitInterest, submitNewEvent, findPlants,
   resetPlantFilters, toggleSaved, isSaved, registerEvent, ratingKey, setRatingInput,
-  averageRating, ratingCount, submitRating,
+  averageRating, ratingCount, submitRating, configureNavigation, syncRoute,
+  setAuthRedirect, setDetailFromRoute,
 }
 
 export function useGreenLink() {

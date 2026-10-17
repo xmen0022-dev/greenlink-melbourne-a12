@@ -1,11 +1,15 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+const route = useRoute()
+const accessNotice = computed(() => route.query.access === 'organiser' ? 'Organiser access is required for that page.' : '')
+
 const {
-  eventErrors, eventSuccess, eventTypes, interestErrors, interestForm,
-  interestSuccess, isOrganiser, newEventForm, organiserEvents, registeredEvents,
-  savedEvents, savedPlants, savedSpaces, showDetail, submitInterest,
-  submitNewEvent, userRoleLabel, validateInterestArea, validateInterestEmail,
+  goToPage, interestErrors, interestForm, interestSuccess, isOrganiser,
+  registeredEvents, savedEvents, savedPlants, savedSpaces, showDetail, submitInterest,
+  userRoleLabel, validateInterestArea, validateInterestEmail,
   validateInterestName, validateSuburb,
 } = useGreenLink()
 </script>
@@ -13,11 +17,13 @@ const {
 <template>
   <section class="content-section page-section">
     <div class="section-heading"><p class="eyebrow">My Account</p><h2>Your saved items and registrations.</h2></div>
+    <p v-if="accessNotice" class="auth-notice">{{ accessNotice }}</p>
     <div class="account-summary">
       <article class="role-card">
         <span>Current role</span><strong>{{ userRoleLabel }}</strong>
         <p v-if="isOrganiser">You can create community events and manage your submitted event list.</p>
         <p v-else>You can save items, register for events, and submit interest in local action.</p>
+        <button v-if="isOrganiser" class="button secondary" type="button" @click="goToPage('organiser-events')">Open organiser tools</button>
       </article>
       <article class="security-note"><strong>Security practices</strong><p>Forms validate input before submission. Stored text is trimmed and angle brackets are removed to reduce XSS risk.</p></article>
     </div>
@@ -27,19 +33,6 @@ const {
       <article class="action-card"><h3>Saved Events</h3><p v-if="savedEvents.length === 0">No saved events yet.</p><button v-for="event in savedEvents" :key="event.id" type="button" @click="showDetail('event', event.id)">{{ event.title }}</button></article>
       <article class="action-card"><h3>Registered Events</h3><p v-if="registeredEvents.length === 0">No event registrations yet.</p><button v-for="event in registeredEvents" :key="event.id" type="button" @click="showDetail('event', event.id)">{{ event.title }}</button></article>
     </div>
-  </section>
-
-  <section v-if="isOrganiser" class="form-section">
-    <div class="form-copy"><p class="eyebrow">Organiser tools</p><h2>Create a community event.</h2><p>This role-based section is only available to organiser accounts.</p><p v-if="organiserEvents.length">You have created {{ organiserEvents.length }} event(s) in this session.</p></div>
-    <form class="interest-form" novalidate @submit.prevent="submitNewEvent">
-      <div class="form-field"><label for="new-event-title">Event title</label><input id="new-event-title" v-model="newEventForm.title" type="text" :aria-invalid="Boolean(eventErrors.title)" /><p v-if="eventErrors.title" class="field-error">{{ eventErrors.title }}</p></div>
-      <div class="form-field"><label for="new-event-location">Location</label><input id="new-event-location" v-model="newEventForm.location" type="text" :aria-invalid="Boolean(eventErrors.location)" /><p v-if="eventErrors.location" class="field-error">{{ eventErrors.location }}</p></div>
-      <div class="form-field"><label for="new-event-date">Date label</label><input id="new-event-date" v-model="newEventForm.date" type="text" placeholder="Sat 10 Oct" :aria-invalid="Boolean(eventErrors.date)" /><p v-if="eventErrors.date" class="field-error">{{ eventErrors.date }}</p></div>
-      <div class="form-field"><label for="new-event-group">Date group</label><select id="new-event-group" v-model="newEventForm.dateGroup"><option value="This month">This month</option><option value="Next month">Next month</option></select></div>
-      <div class="form-field"><label for="new-event-type">Event type</label><select id="new-event-type" v-model="newEventForm.tag"><option v-for="type in eventTypes" :key="type" :value="type">{{ type }}</option></select></div>
-      <div class="form-field"><label for="new-event-summary">Summary</label><input id="new-event-summary" v-model="newEventForm.summary" type="text" :aria-invalid="Boolean(eventErrors.summary)" /><p v-if="eventErrors.summary" class="field-error">{{ eventErrors.summary }}</p></div>
-      <button class="button primary form-submit" type="submit">Publish event</button><p v-if="eventSuccess" class="form-success" role="status">Event added to the Community Events page.</p>
-    </form>
   </section>
 
   <section class="form-section">

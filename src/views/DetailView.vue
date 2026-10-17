@@ -1,12 +1,25 @@
 <script setup>
+import { onBeforeUnmount, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import RatingPanel from '../components/common/RatingPanel.vue'
 import { useGreenLink } from '../composables/useGreenLink.js'
 
-const { closeDetail, detailData, detailItem, isSaved, registerEvent, registeredEventIds, toggleSaved } = useGreenLink()
+const route = useRoute()
+const { closeDetail, detailData, detailItem, isSaved, registerEvent, registeredEventIds, setDetailFromRoute, toggleSaved } = useGreenLink()
+
+watch(
+  () => [route.params.type, route.params.id],
+  ([type, id]) => setDetailFromRoute(type, id),
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  detailItem.value = null
+})
 </script>
 
 <template>
-  <section class="content-section page-section">
+  <section v-if="detailData" class="content-section page-section">
     <div class="detail-card">
       <button class="text-button" type="button" @click="closeDetail">Back</button>
       <p class="eyebrow">Details</p><h2>{{ detailData.name || detailData.title }}</h2>
@@ -21,5 +34,8 @@ const { closeDetail, detailData, detailItem, isSaved, registerEvent, registeredE
         <button v-if="detailItem.type === 'event'" class="button primary" type="button" :disabled="registeredEventIds.includes(detailItem.id)" @click="registerEvent(detailItem.id)">{{ registeredEventIds.includes(detailItem.id) ? 'Registered' : 'Register Interest' }}</button>
       </div>
     </div>
+  </section>
+  <section v-else class="content-section page-section">
+    <div class="empty-state"><h2>Item not found.</h2><p>The requested GreenLink item does not exist.</p><button class="button primary" type="button" @click="closeDetail">Go back</button></div>
   </section>
 </template>

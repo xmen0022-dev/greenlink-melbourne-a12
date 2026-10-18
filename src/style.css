@@ -1,3 +1,4 @@
+/* Theme, reset, and global element defaults. */
 :root {
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -46,6 +47,7 @@ button:disabled {
   min-height: 100vh;
 }
 
+/* Shared application shell and primary navigation. */
 .app-shell {
   min-height: 100vh;
   overflow: hidden;
@@ -202,6 +204,7 @@ button:disabled {
   padding: 32px 20px;
 }
 
+/* Authentication layout and validation feedback. */
 .auth-page {
   min-height: calc(100vh - 190px);
 }
@@ -286,6 +289,7 @@ button:disabled {
   padding: 48px 0 72px;
 }
 
+/* Home page hero, overview panels, and impact statistics. */
 .hero-copy {
   max-width: 640px;
 }
@@ -544,6 +548,7 @@ p {
   padding: 96px 0 0;
 }
 
+/* Reusable content sections, cards, and guided workflows. */
 .section-heading {
   display: grid;
   max-width: 720px;
@@ -643,6 +648,7 @@ p {
   margin: 0 auto;
 }
 
+/* Form controls, filters, status messages, and account activity. */
 .form-copy p:last-child {
   margin-top: 18px;
 }
@@ -935,6 +941,7 @@ fieldset input {
   background: #ffffff;
 }
 
+/* Leaflet map container, custom markers, and accessible popup controls. */
 .green-spaces-map {
   z-index: 0;
   width: 100%;
@@ -1065,6 +1072,7 @@ fieldset input {
   box-shadow: 0 18px 48px rgba(40, 79, 55, 0.08);
 }
 
+/* Searchable and sortable data tables shared across catalog pages. */
 .table-toolbar,
 .table-pagination {
   display: flex;
@@ -1236,6 +1244,7 @@ fieldset input {
 }
 
 @media (max-width: 860px) {
+  /* Collapse multi-column layouts and expose mobile navigation controls. */
   .site-header {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1329,6 +1338,7 @@ fieldset input {
 }
 
 @media (max-width: 560px) {
+  /* Compact spacing and controls for narrow phone screens. */
   .site-header,
   .hero-section,
   .content-section,

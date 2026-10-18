@@ -6,6 +6,8 @@ import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'fi
 import { connectFirestoreEmulator, doc, getDoc, getFirestore } from 'firebase/firestore'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
 
+// Exercise callable functions against the local Firebase suite, including the
+// authenticated context automatically attached by the Functions SDK.
 function readEnvironmentFile(filePath) {
   return Object.fromEntries(readFileSync(filePath, 'utf8').split(/\r?\n/)
     .filter((line) => line && !line.startsWith('#'))
@@ -25,12 +27,14 @@ connectFirestoreEmulator(db, '127.0.0.1', 8080)
 connectFunctionsEmulator(functions, '127.0.0.1', 5001)
 
 try {
+  // Confirm the aggregation function uses the seeded emulator catalog.
   const summaryResult = await httpsCallable(functions, 'getCommunityImpactSummary')()
   assert.equal(summaryResult.data.counts.greenSpaces, 12)
   assert.equal(summaryResult.data.counts.nativePlants, 12)
   assert.equal(summaryResult.data.counts.communityEvents, 12)
   assert.equal(summaryResult.data.nextEvent.title, 'Royal Park Tree Planting Day')
 
+  // Register twice to verify the server transaction is idempotent.
   const credential = await createUserWithEmailAndPassword(auth, `functions-${unique}@example.com`, 'TestPass123!')
   const registrationResult = await httpsCallable(functions, 'registerForEvent')({ eventId: 201 })
   assert.equal(registrationResult.data.eventId, 201)

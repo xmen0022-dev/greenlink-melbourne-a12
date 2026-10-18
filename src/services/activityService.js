@@ -19,6 +19,7 @@ const activityCollections = {
   interests: 'greenlink_volunteer_interests',
 }
 
+// Deterministic IDs make save and rating writes idempotent for each user/item.
 function activityDocumentId(userId, ...parts) {
   return [userId, ...parts].join('_')
 }
@@ -29,6 +30,7 @@ async function readOwnedCollection(collectionName, userId) {
 }
 
 export async function loadUserActivity(userId) {
+  // Independent collections can be loaded in parallel to reduce startup time.
   const [savedItems, registrations, userRatings] = await Promise.all([
     readOwnedCollection(activityCollections.saved, userId),
     readOwnedCollection(activityCollections.registrations, userId),
@@ -44,6 +46,8 @@ export async function setSavedItem(userId, itemType, itemId, shouldSave) {
 }
 
 export function saveRegistration(_userId, eventId) {
+  // Registration ownership is verified by the callable Cloud Function. The
+  // unused parameter keeps this function aligned with other activity methods.
   return registerForEventOnServer(eventId)
 }
 
@@ -64,6 +68,7 @@ export function saveVolunteerInterest(userId, interest) {
 }
 
 export async function publishEvent(userId, event) {
+  // The timestamp-based numeric ID matches the catalog's existing ID format.
   const id = Date.now()
   const publishedEvent = { ...event, id, ownerId: userId }
   await setDoc(doc(db, 'greenlink_events', String(id)), {

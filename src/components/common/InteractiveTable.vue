@@ -1,6 +1,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 
+// A column may provide custom value/format functions while this component owns
+// the reusable searching, sorting, pagination, and accessible table controls.
 const props = defineProps({
   rows: { type: Array, required: true },
   columns: { type: Array, required: true },
@@ -17,6 +19,8 @@ const currentPage = ref(1)
 
 const searchableColumns = computed(() => props.columns.filter((column) => column.searchable !== false && column.key !== 'actions'))
 
+// Read the underlying value separately from its display format so search and
+// sorting operate on stable data rather than presentation text.
 function valueFor(row, column) {
   return typeof column.value === 'function' ? column.value(row) : row[column.key]
 }
@@ -31,6 +35,7 @@ function normalized(value) {
 }
 
 const processedRows = computed(() => {
+  // Apply global and per-column filters before sorting the resulting records.
   const query = normalized(globalQuery.value.trim())
   const rows = props.rows.filter((row) => {
     const matchesGlobal = !query || searchableColumns.value.some((column) => normalized(valueFor(row, column)).includes(query))
@@ -48,6 +53,8 @@ const processedRows = computed(() => {
   return [...rows].sort((left, right) => {
     const leftValue = valueFor(left, column)
     const rightValue = valueFor(right, column)
+    // Preserve numeric order for numbers and use natural, case-insensitive order
+    // for text such as names that may contain digits.
     const comparison = typeof leftValue === 'number' && typeof rightValue === 'number'
       ? leftValue - rightValue
       : String(leftValue ?? '').localeCompare(String(rightValue ?? ''), undefined, { numeric: true, sensitivity: 'base' })
@@ -98,6 +105,7 @@ watch(
 )
 
 watch(pageCount, (count) => {
+  // Filtering can remove the current last page, so clamp it to a valid page.
   if (currentPage.value > count) currentPage.value = count
 })
 </script>

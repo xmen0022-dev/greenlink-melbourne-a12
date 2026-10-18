@@ -2,6 +2,8 @@
 import RatingPanel from '../components/common/RatingPanel.vue'
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// Multiple checkbox groups are combined by the store to find plants matching a
+// visitor's sunlight, garden setting, and preferred plant type.
 const {
   filteredPlants, findPlants, gardenOptions, hasSearchedPlants, isSaved,
   plantOptions, resetPlantFilters, selectedGardenTypes, selectedPlantTypes,

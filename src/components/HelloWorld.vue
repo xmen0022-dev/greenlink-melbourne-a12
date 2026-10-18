@@ -4,6 +4,8 @@ import heroImg from '../assets/hero.png'
 import viteLogo from '../assets/vite.svg'
 import vueLogo from '../assets/vue.svg'
 
+// Legacy Vite starter component retained as a simple component example. It is
+// not used by the GreenLink application routes.
 const count = ref(0)
 </script>
 

@@ -7,6 +7,8 @@ const { goToPage, impactStats, quickActions } = useGreenLink()
 const cloudImpact = ref(null)
 const cloudStatus = ref('loading')
 
+// Prefer the server-generated summary, while keeping bundled values available
+// for offline development or a temporary Cloud Functions failure.
 const displayedImpactStats = computed(() => cloudImpact.value ? [
   { value: cloudImpact.value.counts.greenSpaces, label: 'green spaces available' },
   { value: cloudImpact.value.counts.nativePlants, label: 'native plants catalogued' },

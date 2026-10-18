@@ -11,6 +11,8 @@ import {
 } from 'firebase/auth'
 import { collection, deleteDoc, doc, getDocs, getFirestore, query, setDoc, terminate, where } from 'firebase/firestore'
 
+// This smoke test verifies the deployed Auth and Firestore configuration using
+// temporary data that is removed before the script exits.
 const environment = Object.fromEntries(
   readFileSync(resolve('.env.local'), 'utf8')
     .split(/\r?\n/)
@@ -33,6 +35,7 @@ const email = `greenlink-auth-check-${Date.now()}@example.com`
 const password = 'GreenLink1!'
 
 try {
+  // Cover the complete register, sign-out, and sign-in lifecycle.
   const registered = await createUserWithEmailAndPassword(auth, email, password)
   const registeredUid = registered.user.uid
   await signOut(auth)
@@ -55,6 +58,7 @@ try {
 
   console.log('Cloud Firebase Auth and Firestore activity persistence verified; temporary data was removed.')
 } finally {
+  // Best-effort cleanup also handles failures partway through the test.
   if (auth.currentUser) await deleteUser(auth.currentUser).catch(() => {})
   await terminate(db)
 }

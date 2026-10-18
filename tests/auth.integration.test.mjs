@@ -11,6 +11,8 @@ import {
 } from 'firebase/auth'
 import { connectFirestoreEmulator, deleteDoc, doc, getDoc, getFirestore, setDoc, terminate } from 'firebase/firestore'
 
+// Verify the main resident authentication lifecycle and permitted activity
+// writes against local Auth and Firestore emulators.
 const projectId = 'fit5032-19cab'
 const email = `resident-${Date.now()}@greenlink.test`
 const password = 'Resident1'
@@ -36,6 +38,7 @@ try {
   const loggedIn = await signInWithEmailAndPassword(auth, email, password)
   assert.equal(loggedIn.user.displayName, 'Integration Resident')
 
+  // The same owner-based rules should allow every supported activity type.
   for (const collectionName of [
     'greenlink_saved_items',
     'greenlink_registrations',

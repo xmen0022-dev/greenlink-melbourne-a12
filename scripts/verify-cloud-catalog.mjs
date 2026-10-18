@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { initializeApp } from 'firebase/app'
 import { collection, getCountFromServer, getFirestore, terminate } from 'firebase/firestore'
 
+// Verify that every deployed catalog was seeded with the expected record count.
 const environment = Object.fromEntries(
   readFileSync(resolve('.env.local'), 'utf8')
     .split(/\r?\n/)
@@ -30,6 +31,7 @@ const expectedCounts = {
 }
 
 try {
+  // Count queries validate the deployment without downloading catalog records.
   const results = await Promise.all(
     Object.entries(expectedCounts).map(async ([collectionName, expected]) => {
       const snapshot = await getCountFromServer(collection(db, collectionName))

@@ -7,6 +7,8 @@ import { useGreenLink } from '../composables/useGreenLink.js'
 const route = useRoute()
 const { closeDetail, detailData, detailItem, isSaved, registerEvent, registeredEventIds, registrationMessages, setDetailFromRoute, toggleSaved } = useGreenLink()
 
+// Keep the selected catalog item in sync when the same component instance is
+// reused for a different detail URL.
 watch(
   () => [route.params.type, route.params.id],
   ([type, id]) => setDetailFromRoute(type, id),
@@ -14,6 +16,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  // Prevent a previous item from flashing when the next detail page opens.
   detailItem.value = null
 })
 </script>

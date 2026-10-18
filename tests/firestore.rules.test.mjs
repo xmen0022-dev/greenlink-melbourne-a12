@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs'
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 
+// Validate public catalog access, per-user ownership, server-only registration,
+// and organiser-only catalog writes using isolated security-rule contexts.
 const projectId = 'fit5032-19cab'
 const testEnvironment = await initializeTestEnvironment({
   projectId,
@@ -14,11 +16,13 @@ const testEnvironment = await initializeTestEnvironment({
 })
 
 try {
+  // Seed fixtures with rules disabled so each rule can be tested independently.
   await testEnvironment.withSecurityRulesDisabled(async (context) => {
     await setDoc(doc(context.firestore(), 'greenlink_spaces', 'rule-test-public'), { id: 9999, name: 'Test park' })
     await setDoc(doc(context.firestore(), 'users', 'organiser-1'), { role: 'organiser', name: 'Test organiser' })
   })
 
+  // Create callers representing the key access levels used by the application.
   const publicDb = testEnvironment.unauthenticatedContext().firestore()
   const residentDb = testEnvironment.authenticatedContext('resident-1').firestore()
   const otherResidentDb = testEnvironment.authenticatedContext('resident-2').firestore()

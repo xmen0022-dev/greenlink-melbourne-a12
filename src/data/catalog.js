@@ -1,3 +1,5 @@
+// Built-in catalog data keeps the application useful during first-run setup,
+// local demos, and temporary Firestore outages.
 export const pages = [
   { id: 'home', label: 'Home' },
   { id: 'spaces', label: 'Explore Green Spaces' },
@@ -61,6 +63,8 @@ export const learningTopics = [
   { id: 306, title: 'Citizen Science', summary: 'Record local plants and wildlife to support community biodiversity knowledge.' },
 ]
 
+// Dashboard and navigation content that is presentation-focused rather than
+// user-generated data.
 export const impactStats = [
   { value: '48', label: 'green spaces listed' },
   { value: '1,280+', label: 'native plants matched' },
@@ -73,6 +77,7 @@ export const quickActions = [
   { title: 'Participate', text: 'Find tree-planting, gardening, and biodiversity activities.', cta: 'Browse Events', page: 'events' },
 ]
 
+// Shared filter choices used by multiple catalog views and forms.
 export const spaceTypes = ['All', 'Park', 'Community Garden', 'Nature Reserve']
 export const sunlightOptions = ['Full Sun', 'Partial Shade', 'Shade']
 export const gardenOptions = ['Balcony', 'Small Garden', 'Backyard']

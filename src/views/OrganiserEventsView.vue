@@ -1,6 +1,7 @@
 <script setup>
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// Router guards restrict this publishing workflow to organiser accounts.
 const {
   eventErrors,
   eventSuccess,

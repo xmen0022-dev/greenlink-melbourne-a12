@@ -15,6 +15,8 @@ import {
   nativePlants,
 } from '../src/data/catalog.js'
 
+// Load the local Vite configuration without adding another environment parser
+// dependency to this one-off maintenance script.
 function readEnvironmentFile(filePath) {
   return Object.fromEntries(
     readFileSync(filePath, 'utf8')
@@ -33,9 +35,11 @@ const useCloud = process.argv.includes('--cloud')
 const confirmation = process.argv.find((argument) => argument.startsWith('--confirm-project='))?.split('=')[1]
 
 if (useCloud && confirmation !== projectId) {
+  // Require an explicit project ID before writing to a real cloud database.
   throw new Error(`Cloud seeding requires --confirm-project=${projectId}`)
 }
 
+// Each bundled catalog maps directly to its production Firestore collection.
 const datasets = [
   ['greenlink_spaces', greenSpaces],
   ['greenlink_plants', nativePlants],
@@ -44,6 +48,7 @@ const datasets = [
 ]
 
 async function seedDatabase(db) {
+  // Commit the complete catalog atomically so readers never see a partial seed.
   const batch = writeBatch(db)
 
   for (const [collectionName, records] of datasets) {
@@ -70,6 +75,7 @@ async function seedDatabase(db) {
 }
 
 if (useCloud) {
+  // Cloud mode is opt-in; the emulator is the safe default for local work.
   const firebaseApp = initializeApp({
     apiKey: environment.VITE_FIREBASE_API_KEY,
     authDomain: environment.VITE_FIREBASE_AUTH_DOMAIN,

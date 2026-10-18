@@ -1,6 +1,7 @@
 <script setup>
 import { useGreenLink } from '../../composables/useGreenLink.js'
 
+// The responsive header reflects the active route and current Firebase session.
 const {
   activePage,
   currentUser,

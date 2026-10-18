@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { calculateDistanceKm, formatDistance, hasValidCoordinates } from '../src/utils/geo.js'
 
+// Unit coverage includes coordinate validation, Haversine accuracy, and labels.
 test('validates geographic coordinates', () => {
   assert.equal(hasValidCoordinates({ latitude: -37.8136, longitude: 144.9631 }), true)
   assert.equal(hasValidCoordinates({ latitude: -91, longitude: 144.9631 }), false)

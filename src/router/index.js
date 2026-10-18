@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// Route metadata keeps navigation highlighting and access rules close to each
+// route definition, making the global guards below straightforward.
 const routes = [
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue'), meta: { navKey: 'home' } },
   { path: '/login', name: 'auth', component: () => import('../views/AuthView.vue'), meta: { navKey: 'auth', guestOnly: true } },
@@ -34,6 +36,8 @@ const router = createRouter({
 
 const store = useGreenLink()
 
+// Give the framework-independent store a router adapter without importing the
+// router into the store and creating a circular dependency.
 store.configureNavigation((target) => {
   if (typeof target === 'string') {
     return target.startsWith('/') ? router.push(target) : router.push({ name: target })
@@ -42,9 +46,11 @@ store.configureNavigation((target) => {
 })
 
 router.beforeEach(async (to) => {
+  // Always wait for Firebase's first auth result before enforcing permissions.
   await store.waitForAuthReady()
 
   if (to.meta.requiresAuth && !store.isLoggedIn.value) {
+    // Preserve the requested URL so login can return the user to their task.
     store.setAuthRedirect(to.fullPath)
     return { name: 'auth', query: { redirect: to.fullPath } }
   }
@@ -58,6 +64,7 @@ router.beforeEach(async (to) => {
 })
 
 router.afterEach((to) => {
+  // Detail pages inherit the navigation section of the catalog they belong to.
   if (to.name === 'detail') {
     const detailNav = { space: 'spaces', plant: 'plants', event: 'events', learn: 'learn' }
     store.syncRoute(detailNav[to.params.type] || '')

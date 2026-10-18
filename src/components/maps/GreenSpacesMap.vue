@@ -28,6 +28,8 @@ function hasCoordinates(space) {
 }
 
 function createTextElement(tagName, text, className = '') {
+  // Build popup content with textContent so catalog text is never interpreted
+  // as executable HTML.
   const element = document.createElement(tagName)
   element.textContent = text
   if (className) element.className = className
@@ -57,6 +59,8 @@ function createPopup(space) {
 function renderMapContent() {
   if (!map || !markerLayer || !userLayer) return
 
+  // Rebuild only application-owned layers when filters or location change; the
+  // base OpenStreetMap tile layer remains untouched.
   markerLayer.clearLayers()
   userLayer.clearLayers()
   const plottedSpaces = props.spaces.filter(hasCoordinates)
@@ -86,6 +90,7 @@ function renderMapContent() {
     const userCoordinates = [Number(props.userLocation.latitude), Number(props.userLocation.longitude)]
     const accuracy = Math.max(1, Number(props.userLocation.accuracy) || 1)
 
+    // The outer circle communicates browser-reported location accuracy.
     L.circle(userCoordinates, {
       radius: accuracy,
       color: '#1769aa',
@@ -105,6 +110,7 @@ function renderMapContent() {
     bounds.push(userCoordinates)
   }
 
+  // Choose a useful viewport for zero, one, or many visible points.
   if (bounds.length === 0) {
     map.setView(melbourneCentre, 12)
   } else if (bounds.length === 1) {
@@ -135,6 +141,7 @@ onMounted(async () => {
 watch([() => props.spaces, () => props.userLocation], renderMapContent, { deep: true })
 
 onBeforeUnmount(() => {
+  // Leaflet installs DOM listeners, so dispose the map with the Vue component.
   map?.remove()
   map = null
   markerLayer = null

@@ -9,6 +9,7 @@ const {
   registrationMessages, selectedEventTypes, showDetail, toggleSaved,
 } = useGreenLink()
 
+// Card and table views share the same filtered event collection and actions.
 const eventView = ref('cards')
 const eventColumns = [
   { key: 'dateIso', label: 'Date', value: (event) => event.dateIso, format: (_value, event) => event.date },

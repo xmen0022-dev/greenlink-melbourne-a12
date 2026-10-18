@@ -2,6 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Reusable identity checks keep each collection rule concise and consistent.
     function signedIn() {
       return request.auth != null;
     }
@@ -16,6 +17,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Users own their profile but cannot grant themselves organiser access.
       allow create: if ownsUserDocument(userId)
         && request.resource.data.role == 'resident';
       allow read: if ownsUserDocument(userId);
@@ -25,6 +27,7 @@ service cloud.firestore {
     }
 
     match /{catalog}/{itemId} {
+      // Catalogs are public to read; only verified organisers may maintain them.
       allow read: if catalog in [
         'greenlink_spaces',
         'greenlink_plants',
@@ -42,6 +45,8 @@ service cloud.firestore {
     }
 
     match /{activityCollection}/{activityId} {
+      // Personal activity is private to its owner. Registrations are read-only
+      // here because the Cloud Function creates them with trusted server access.
       allow create: if activityCollection in [
         'greenlink_saved_items',
         'greenlink_ratings',
@@ -69,6 +74,7 @@ service cloud.firestore {
     }
 
     match /{document=**} {
+      // Deny every collection that has not been explicitly allowed above.
       allow read, write: if false;
     }
   }

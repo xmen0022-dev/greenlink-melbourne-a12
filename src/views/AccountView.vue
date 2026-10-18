@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// The account page combines role information, saved activity, registrations,
+// and the volunteer-interest form for the signed-in user.
 const route = useRoute()
 const accessNotice = computed(() => route.query.access === 'organiser' ? 'Organiser access is required for that page.' : '')
 

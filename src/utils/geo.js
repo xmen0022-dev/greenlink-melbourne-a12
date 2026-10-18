@@ -18,6 +18,8 @@ export function hasValidCoordinates(location) {
 export function calculateDistanceKm(origin, destination) {
   if (!hasValidCoordinates(origin) || !hasValidCoordinates(destination)) return null
 
+  // Apply the Haversine formula to calculate a great-circle distance between
+  // two latitude/longitude points.
   const originLatitude = toRadians(Number(origin.latitude))
   const destinationLatitude = toRadians(Number(destination.latitude))
   const latitudeDelta = destinationLatitude - originLatitude
@@ -30,6 +32,7 @@ export function calculateDistanceKm(origin, destination) {
 }
 
 export function formatDistance(distanceKm) {
+  // Metres are easier to scan for nearby places; longer distances use km.
   if (!Number.isFinite(distanceKm)) return 'Location required'
   if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m away`
   return `${distanceKm.toFixed(1)} km away`

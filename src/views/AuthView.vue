@@ -1,6 +1,8 @@
 <script setup>
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// Authentication state and validation live in the shared store so login and
+// registration follow the same rules wherever they are opened from.
 const {
   authMode, authNotice, authSubmitting, loginErrors, loginForm, registerErrors, registerForm,
   submitLogin, submitRegister, validateLoginEmail, validateLoginPassword,

@@ -15,6 +15,8 @@ const userLocation = ref(null)
 const locating = ref(false)
 const locationStatus = ref('Use your location to find the nearest green spaces.')
 
+// Enrich filtered catalog entries with distance only after the visitor grants
+// location access, then place the nearest valid result first.
 const spacesWithDistance = computed(() => {
   const spaces = filteredSpaces.value.map((space) => {
     const distanceKm = userLocation.value ? calculateDistanceKm(userLocation.value, space) : null
@@ -45,6 +47,7 @@ const spaceColumns = computed(() => [
 ])
 
 function locationErrorMessage(error) {
+  // Convert browser-specific geolocation codes into actionable user guidance.
   if (error?.code === 1) return 'Location permission was denied. Allow location access in your browser to sort nearby spaces.'
   if (error?.code === 2) return 'Your location is currently unavailable. Check your device location settings and try again.'
   if (error?.code === 3) return 'Finding your location timed out. Please try again.'
@@ -59,6 +62,8 @@ function locateUser() {
 
   locating.value = true
   locationStatus.value = 'Finding your current location...'
+  // A recent cached location is acceptable; high accuracy is requested when a
+  // fresh reading is required.
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
       userLocation.value = {

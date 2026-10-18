@@ -5,6 +5,8 @@ import { setGlobalOptions } from 'firebase-functions/v2/options'
 
 initializeApp()
 
+// Conservative runtime limits keep the callable functions responsive while
+// controlling resource usage for this small application.
 setGlobalOptions({
   region: 'australia-southeast2',
   memory: '256MiB',
@@ -29,12 +31,16 @@ function parseEventId(value) {
   return eventId
 }
 
+// Registering on the server keeps ownership tied to the verified Firebase user
+// instead of trusting a user ID supplied by the browser.
 export const registerForEvent = onCall(async (request) => {
   const userId = requireAuthentication(request)
   const eventId = parseEventId(request.data?.eventId)
   const eventReference = db.collection('greenlink_events').doc(String(eventId))
   const registrationReference = db.collection('greenlink_registrations').doc(`${userId}_${eventId}`)
 
+  // A deterministic document ID plus a transaction makes repeated clicks safe:
+  // the same user can only have one registration for each event.
   return db.runTransaction(async (transaction) => {
     const [eventSnapshot, registrationSnapshot] = await Promise.all([
       transaction.get(eventReference),
@@ -66,6 +72,8 @@ export const registerForEvent = onCall(async (request) => {
   })
 })
 
+// Aggregate dashboard data on demand so the client receives one small response
+// rather than downloading every source collection.
 export const getCommunityImpactSummary = onCall(async () => {
   const collectionNames = {
     greenSpaces: 'greenlink_spaces',
@@ -76,6 +84,7 @@ export const getCommunityImpactSummary = onCall(async () => {
   const today = new Date().toISOString().slice(0, 10)
 
   const [entries, nextEventSnapshot] = await Promise.all([
+    // Firestore count queries avoid reading each document solely to count it.
     Promise.all(
       Object.entries(collectionNames).map(async ([key, collectionName]) => {
         const snapshot = await db.collection(collectionName).count().get()

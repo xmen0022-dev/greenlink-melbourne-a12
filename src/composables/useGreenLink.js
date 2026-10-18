@@ -16,6 +16,8 @@ import {
   sunlightOptions,
 } from '../data/catalog.js'
 
+// Catalog state starts with bundled data, then replaces each non-empty section
+// with its live Firestore equivalent when available.
 const greenSpaces = ref([...fallbackGreenSpaces])
 const nativePlants = ref([...fallbackNativePlants])
 const learningTopics = ref([...fallbackLearningTopics])
@@ -23,6 +25,8 @@ const initialEvents = ref([...fallbackEvents])
 const catalogLoading = ref(false)
 const catalogError = ref('')
 
+// Form values and validation messages are kept centrally so related views share
+// the same behaviour and can retain useful input during navigation.
 const loginForm = ref({ email: '', password: '' })
 const registerForm = ref({ name: '', email: '', password: '', role: 'resident' })
 const interestForm = ref({ name: '', email: '', suburb: '', interest: '' })
@@ -33,6 +37,7 @@ const registerErrors = ref({ name: null, email: null, password: null, role: null
 const interestErrors = ref({ name: null, email: null, suburb: null, interest: null })
 const eventErrors = ref({ title: null, location: null, date: null, summary: null })
 
+// Session, navigation, filter, and user activity state used across the app.
 const isLoggedIn = ref(false)
 const currentUser = ref(null)
 const activePage = ref('home')
@@ -75,9 +80,11 @@ const interestEmailStatus = ref('')
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 let navigate = (target) => {
+  // This fallback supports isolated component use before the router is attached.
   activePage.value = typeof target === 'string' ? target : target.name
 }
 
+// Derived collections update automatically whenever a catalog or filter changes.
 const communityEvents = computed(() => [...initialEvents.value, ...createdEvents.value])
 const isOrganiser = computed(() => currentUser.value?.role === 'organiser')
 const userRoleLabel = computed(() => (currentUser.value?.role === 'organiser' ? 'Organiser' : 'Resident'))
@@ -133,6 +140,7 @@ async function loadCatalogs() {
     const { fetchCatalogs } = await import('../services/catalogService.js')
     const catalogs = await fetchCatalogs()
 
+    // Keep the bundled section when a live collection is empty.
     if (catalogs.spaces.length) greenSpaces.value = catalogs.spaces
     if (catalogs.plants.length) nativePlants.value = catalogs.plants
     if (catalogs.events.length) initialEvents.value = catalogs.events
@@ -158,6 +166,7 @@ function resetUserActivity() {
 }
 
 async function sendAccountEmail(payload) {
+  // Email support is loaded only when it is needed, reducing the initial bundle.
   const { sendConfirmationEmail } = await import('../services/emailService.js')
   return sendConfirmationEmail(payload)
 }
@@ -165,6 +174,8 @@ async function sendAccountEmail(payload) {
 function describeEmailError(error) {
   const status = Number(error?.status)
   const rawMessage = error?.text || error?.message || 'Unknown EmailJS error.'
+  // Keep diagnostics useful without allowing multiline or oversized provider
+  // responses to disrupt the page layout.
   const safeMessage = String(rawMessage)
     .replace(/[\r\n]+/g, ' ')
     .replace(/\s+/g, ' ')
@@ -184,6 +195,7 @@ async function restoreUserActivity(userId) {
     registeredEventIds.value = activity.registrations.map((item) => item.eventId)
     ratings.value = { ...baselineRatings }
     userRatings.value = {}
+    // Merge the user's rating into the bundled aggregate used by the demo UI.
     for (const rating of activity.userRatings) {
       const key = `${rating.itemType}-${rating.itemId}`
       ratings.value[key] = [...(ratings.value[key] || []), rating.value]
@@ -198,6 +210,7 @@ async function restoreUserActivity(userId) {
 }
 
 function sanitizeInput(value) {
+  // Trim simple text fields and remove angle brackets before persistence.
   return String(value).trim().replace(/[<>]/g, '')
 }
 
@@ -333,6 +346,7 @@ function finishAuth(user, shouldRedirect = true) {
   loginForm.value.password = ''
   registerForm.value.password = ''
   authNotice.value = ''
+  // Continue to the protected page that originally initiated authentication.
   const destination = requestedPage.value === 'auth' ? 'home' : requestedPage.value
   requestedPage.value = 'home'
   navigate(destination)
@@ -407,6 +421,8 @@ async function logout() {
 let authInitialisation
 
 function initializeAuth() {
+  // Reuse one promise so multiple route guards cannot register duplicate auth
+  // observers while Firebase is resolving the initial session.
   if (authInitialisation) return authInitialisation
 
   authInitialisation = import('../services/authService.js')
@@ -479,6 +495,8 @@ async function submitInterest() {
     interestForm.value = { name: currentUser.value.name, email: currentUser.value.email, suburb: '', interest: '' }
     interestErrors.value = { name: null, email: null, suburb: null, interest: null }
 
+    // Email is a follow-up side effect. Its failure must not undo the interest
+    // record that has already been saved successfully.
     try {
       await sendAccountEmail({
         toName: interest.name,
@@ -540,6 +558,7 @@ async function toggleSaved(type, id) {
   try {
     const { setSavedItem } = await import('../services/activityService.js')
     await setSavedItem(currentUser.value.id, type, id, shouldSave)
+    // Update local state only after Firestore confirms the write.
     savedItems.value = shouldSave
       ? [...savedItems.value, key]
       : savedItems.value.filter((item) => item !== key)
@@ -561,12 +580,14 @@ async function registerEvent(id) {
   if (registeredEventIds.value.includes(id)) return
   try {
     const { saveRegistration } = await import('../services/activityService.js')
+    // The Cloud Function performs the authoritative, duplicate-safe write.
     await saveRegistration(currentUser.value.id, id)
     registeredEventIds.value.push(id)
     activityError.value = ''
     registrationMessages.value[id] = 'Registration saved. Sending confirmation email…'
 
     const event = communityEvents.value.find((item) => item.id === id)
+    // As with volunteer interests, email failure does not roll back registration.
     try {
       await sendAccountEmail({
         toName: currentUser.value.name,
@@ -616,6 +637,8 @@ async function submitRating(type, id) {
     const { saveRating } = await import('../services/activityService.js')
     await saveRating(currentUser.value.id, type, id, value)
     const values = [...(ratings.value[key] || [])]
+    // Replace the user's previous contribution so editing a rating does not
+    // inflate the displayed count or average.
     const previousValue = userRatings.value[key]
     const previousIndex = previousValue === undefined ? -1 : values.lastIndexOf(previousValue)
     if (previousIndex >= 0) values.splice(previousIndex, 1)
@@ -628,6 +651,8 @@ async function submitRating(type, id) {
   }
 }
 
+// This singleton store provides lightweight shared state without an additional
+// state-management dependency.
 const store = {
   pages, greenSpaces, nativePlants, learningTopics, impactStats, quickActions,
   catalogLoading, catalogError,

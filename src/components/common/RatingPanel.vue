@@ -1,6 +1,8 @@
 <script setup>
 import { useGreenLink } from '../../composables/useGreenLink.js'
 
+// The same rating interaction can be rendered as a full detail panel or as a
+// compact summary inside catalog cards and tables.
 const props = defineProps({
   type: { type: String, required: true },
   itemId: { type: [Number, String], required: true },

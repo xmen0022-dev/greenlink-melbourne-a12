@@ -1,6 +1,7 @@
 <script setup>
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// Use shared navigation so recovery from an unknown URL behaves like the header.
 const { goToPage } = useGreenLink()
 </script>
 

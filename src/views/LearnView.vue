@@ -1,6 +1,7 @@
 <script setup>
 import { useGreenLink } from '../composables/useGreenLink.js'
 
+// Learning cards reuse the shared catalog and detail route.
 const { learningTopics, showDetail } = useGreenLink()
 </script>
 

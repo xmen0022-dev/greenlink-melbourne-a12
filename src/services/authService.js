@@ -9,6 +9,8 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from './firebase.js'
 
+// Combine the Firebase identity with the application role stored in Firestore.
+// Unknown or malformed roles are deliberately treated as regular residents.
 function normaliseProfile(firebaseUser, profile = {}) {
   return {
     id: firebaseUser.uid,
@@ -24,6 +26,7 @@ async function loadOrCreateProfile(firebaseUser) {
 
   if (snapshot.exists()) return normaliseProfile(firebaseUser, snapshot.data())
 
+  // Older Firebase accounts may not yet have an application profile.
   const profile = normaliseProfile(firebaseUser)
   await setDoc(profileReference, {
     name: profile.name,
@@ -36,6 +39,8 @@ async function loadOrCreateProfile(firebaseUser) {
 }
 
 export function observeAuthentication(onChange) {
+  // Consumers receive a complete application profile rather than a raw
+  // Firebase user, so role checks remain consistent throughout the UI.
   return onAuthStateChanged(
     auth,
     async (firebaseUser) => {
@@ -69,6 +74,7 @@ export async function registerResident({ name, email, password }) {
     })
     return profile
   } catch (error) {
+    // Avoid leaving an unusable Auth account when its Firestore profile fails.
     await deleteUser(credential.user).catch(() => {})
     throw error
   }

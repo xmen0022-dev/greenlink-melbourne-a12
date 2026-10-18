@@ -833,6 +833,35 @@ p {
   margin-top: 18px;
 }
 
+.location-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f2f7ed;
+}
+
+.location-tools p {
+  flex: 1 1 280px;
+  margin: 0;
+  color: #40574e;
+  font-weight: 700;
+}
+
+.location-tools button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.distance-label,
+.greenlink-popup-distance {
+  color: #1769aa !important;
+  font-weight: 850;
+}
+
 .control-row span {
   color: #10261d;
   font-weight: 850;
@@ -898,54 +927,87 @@ fieldset input {
   grid-column: 1 / -1;
 }
 
-.placeholder-map {
-  position: relative;
-  height: 360px;
+.green-spaces-map-shell {
   margin-bottom: 24px;
   overflow: hidden;
   border: 1px solid rgba(24, 49, 40, 0.12);
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(31, 122, 77, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(31, 122, 77, 0.08) 1px, transparent 1px),
-    #eef5e8;
-  background-size: 48px 48px, 48px 48px, 100% 100%;
-}
-
-.placeholder-map::after {
-  content: "Map of Melbourne Green Spaces";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: rgba(64, 87, 78, 0.38);
-  font-size: 1.6rem;
-  font-weight: 850;
-}
-
-.map-point {
-  position: absolute;
-  z-index: 1;
-  transform: translate(-8px, -8px);
-  padding: 4px 8px 4px 22px;
-  border-radius: 999px;
-  color: #10261d;
   background: #ffffff;
-  box-shadow: 0 10px 24px rgba(40, 79, 55, 0.16);
-  font-size: 0.82rem;
-  font-weight: 800;
 }
 
-.map-point::before {
+.green-spaces-map {
+  z-index: 0;
+  width: 100%;
+  height: 440px;
+  background: #eef5e8;
+}
+
+.map-result-summary {
+  margin: 0;
+  padding: 10px 16px;
+  color: #40574e;
+  background: #f8fbf5;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.greenlink-marker-container {
+  background: transparent;
+  border: 0;
+}
+
+.greenlink-map-marker {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 4px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  background: #1f7a4d;
+  box-shadow: 0 5px 14px rgba(16, 38, 29, 0.35);
+  transform: rotate(-45deg);
+}
+
+.greenlink-map-marker::after {
   content: "";
   position: absolute;
-  top: 50%;
-  left: 8px;
-  width: 8px;
-  height: 8px;
+  inset: 7px;
   border-radius: 50%;
+  background: #dff0cd;
+}
+
+.greenlink-map-popup {
+  display: grid;
+  gap: 7px;
+  color: #10261d;
+  font-family: inherit;
+}
+
+.greenlink-map-popup strong {
+  font-size: 1rem;
+}
+
+.greenlink-map-popup span,
+.greenlink-map-popup p {
+  margin: 0;
+  color: #40574e;
+}
+
+.greenlink-map-popup button {
+  justify-self: start;
+  border: 0;
+  padding: 7px 11px;
+  border-radius: 6px;
+  color: #ffffff;
   background: #1f7a4d;
-  transform: translateY(-50%);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.leaflet-control-zoom a:focus-visible,
+.leaflet-marker-icon:focus-visible,
+.greenlink-map-popup button:focus-visible {
+  outline: 3px solid #e3aa3b;
+  outline-offset: 2px;
 }
 
 .list-layout {

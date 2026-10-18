@@ -17,11 +17,13 @@
     "verify:cloud-auth": "node scripts/verify-cloud-auth.mjs",
     "test:auth": "node tests/auth.integration.test.mjs",
     "test:firestore-rules": "node tests/firestore.rules.test.mjs",
+    "test:geo": "node --test tests/geo.test.mjs",
     "test:functions": "firebase emulators:exec --only auth,firestore,functions \"npm run seed:emulator && node tests/functions.integration.test.mjs\""
   },
   "dependencies": {
     "@emailjs/browser": "^5.0.3",
     "firebase": "^13.0.0",
+    "leaflet": "^1.9.4",
     "vue": "^3.5.41",
     "vue-router": "^4.6.4"
   },

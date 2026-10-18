@@ -36,5 +36,11 @@ npm run firebase:deploy:functions
 The Green Spaces and Community Events pages include reusable interactive data
 tables with global and per-column search, sorting, pagination, and row actions.
 
+The Green Spaces page also provides a real Leaflet and OpenStreetMap map with
+search-linked markers, browser geolocation, location accuracy, Haversine
+distance calculation, nearest-first results, and accessible location feedback.
+See [`docs/geolocation.md`](docs/geolocation.md) for implementation and manual
+verification details.
+
 The functions run on Node.js 22 in `australia-southeast2`, with bounded runtime
 resources and Emulator integration coverage.
